@@ -19,9 +19,9 @@ mongoose.Promise = global.Promise
 mongoose.connect(envConstants.MONGODB_URI)
 require('./models/deployment.model')
 
-/* Middleware */
-const callLoggerMiddleware = require('./middleware/call-logger')
-const errorLoggerMiddleware = require('./middleware/error-logger')
+/* Middlewares */
+const callLoggerMiddleware = require('./middlewares/call-logger.middleware')
+const errorLoggerMiddleware = require('./middlewares/error-logger.middleware')
 
 app.use(callLoggerMiddleware)
 
@@ -30,11 +30,11 @@ app.use(callLoggerMiddleware)
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 /* Routes */
-const baseRoutes = require('./routes/base.routes')
+const statusRoutes = require('./routes/status.routes')
 const deploymentRoutes = require('./routes/deployment.routes')
 
-app.use('/', baseRoutes)
-app.use('/deployment', deploymentRoutes)
+app.use('/', statusRoutes)
+app.use('/', deploymentRoutes)
 
 app.use(errorLoggerMiddleware)
 
