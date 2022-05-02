@@ -36,6 +36,14 @@ spec:
           env:
             - name: 'LOG_LEVEL'
               value: {{ .Values.log.level }}
+            - name: 'TEMPLATE_URI'
+              value: {{ .Values.uris.template }}
+            - name: 'ENDPOINT_URI'
+              value: {{ .Values.uris.endpoint }}
+            - name: 'GIT_URI'
+              value: {{ .Values.uris.git }}
+            - name: 'ARGOCD_URI'
+              value: {{ .Values.uris.argocd }}
             - name: 'MONGODB_URI'
               valueFrom:
                 secretKeyRef:

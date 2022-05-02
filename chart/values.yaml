@@ -4,3 +4,9 @@ registry:
 
 log:
   level: "info"
+
+uris:
+  template: "http://template-svc.krateo-dev.svc"
+  endpoint: "http://endpoint-svc.krateo-dev.svc"
+  git: "http://git-svc.krateo-dev.svc"
+  argocd: "http://argocd-svc.krateo-dev.svc"
