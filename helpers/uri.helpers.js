@@ -3,7 +3,7 @@ const concatUrl = (params) => {
 
   for (let i = 0; i < params.length; i++) {
     const p = params[i]
-    if (i > 0 && p?.length > 0) {
+    if (i > 0 && p.toString().length > 0) {
       if (p[0] !== '/' && url[url.length - 1] !== '/') {
         url += '/'
       }

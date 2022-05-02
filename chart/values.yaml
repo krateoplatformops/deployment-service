@@ -1,0 +1,6 @@
+registry:
+  images:
+    deployment: ghcr.io/krateoplatformops/deployment-service:latest
+
+log:
+  level: "info"

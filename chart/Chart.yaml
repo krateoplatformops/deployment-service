@@ -1,0 +1,12 @@
+apiVersion: v2
+name: api-krateo
+description: Krateo PlatformOps Deployment Service
+type: application
+
+version: 0.1.0
+appVersion: 0.1.0
+
+maintainers:
+  - name: Mauro Sala
+    email: mauro.sala@kiratech.it
+    url: https://krateo.io

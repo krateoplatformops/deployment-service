@@ -16,15 +16,37 @@ const deploymentSchema = new Schema({
     type: String,
     required: true
   },
-  templateId: {
-    type: String,
-    required: true
+  securityIssues: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  codeIssues: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  codeRequests: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  budget: {
+    type: Number,
+    required: true,
+    default: 0
   },
   createdAt: {
     type: Number,
     required: true
+  },
+  repository: {
+    type: String,
+    required: true
   }
 })
+
+deploymentSchema.index({ repository: 1 }, { name: 'deploymentIndex' })
 
 module.exports = mongoose.model(
   'Deployment',

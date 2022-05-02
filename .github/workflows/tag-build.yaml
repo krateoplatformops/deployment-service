@@ -5,9 +5,6 @@ on:
     tags:
       - "*"
 
-env:
-  IMAGE_NAME: api
-
 jobs:
   push:
     name: Create docker image
@@ -39,7 +36,7 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: ghcr.io/krateoplatformops/${{ env.IMAGE_NAME }}:${{steps.tag.outputs.tag}}
+          tags: ghcr.io/krateoplatformops/${{ github.event.repository.name }}:${{steps.tag.outputs.tag}}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
       - name: Image digest
