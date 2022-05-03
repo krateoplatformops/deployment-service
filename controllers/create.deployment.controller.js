@@ -74,7 +74,7 @@ router.post('/', async (req, res, next) => {
 
     logger.debug(JSON.stringify(claim.data))
     logger.debug(JSON.stringify(package.data))
-    logger.debug(JSON.stringify(repo.data))
+    logger.debug(JSON.stringify(repository.data))
 
     const identity = JSON.parse(req.headers.identity)
 
