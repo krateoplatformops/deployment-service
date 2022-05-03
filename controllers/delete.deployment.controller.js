@@ -12,6 +12,7 @@ router.delete('/:id', async (req, res, next) => {
             .status(404)
             .json({ message: `Deployment with id ${req.params.id} not found` })
         } else {
+          // TODO: call kube bridge to delete the deployment
           res
             .status(200)
             .json({ message: `Deployment with id ${req.params.id} deleted` })

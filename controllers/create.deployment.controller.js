@@ -126,45 +126,71 @@ router.post('/', async (req, res, next) => {
 
 router.post('/import', async (req, res, next) => {
   try {
-    const claim = await axios.get(
-      uriHelpers.concatUrl([
-        envConstants.GIT_URI,
-        'file',
-        stringHelpers.to64(req.body.url),
-        stringHelpers.to64('claim.yaml')
-      ])
-    )
-    const package = await axios.get(
-      uriHelpers.concatUrl([
-        envConstants.GIT_URI,
-        'file',
-        stringHelpers.to64(req.body.url),
-        stringHelpers.to64('package.yaml')
-      ])
-    )
-    const repository = await axios.get(
-      uriHelpers.concatUrl([
-        envConstants.GIT_URI,
-        'repository',
-        stringHelpers.to64(req.body.url)
-      ])
-    )
+    let claim = null
+    let package = null
+    let repository = null
 
-    logger.debug(JSON.stringify(claim.data))
-    logger.debug(JSON.stringify(package.data))
-    logger.debug(JSON.stringify(repository.data))
+    // FIXME: get target from endpoint
+    const parsed = uriHelpers.parse(req.body.url)
+
+    // get endpoint settings
+    const endpointUrl = uriHelpers.concatUrl([
+      envConstants.ENDPOINT_URI,
+      'domain',
+      parsed.domain
+    ])
+    const endpoint = (await axios.get(endpointUrl)).data
+
+    logger.debug(JSON.stringify(endpoint))
+
+    switch (endpoint?.type) {
+      case 'github':
+        claim = await axios.get(
+          uriHelpers.concatUrl([
+            envConstants.GIT_URI,
+            'file',
+            stringHelpers.to64(req.body.url),
+            stringHelpers.to64('claim.yaml')
+          ])
+        )
+        package = await axios.get(
+          uriHelpers.concatUrl([
+            envConstants.GIT_URI,
+            'file',
+            stringHelpers.to64(req.body.url),
+            stringHelpers.to64('package.yaml')
+          ])
+        )
+        repository = await axios.get(
+          uriHelpers.concatUrl([
+            envConstants.GIT_URI,
+            'repository',
+            stringHelpers.to64(req.body.url)
+          ])
+        )
+        claim = claim.data.content
+        package = package.data.content
+        repository = repository.data
+        break
+      default:
+        throw new Error('Unsupported domain')
+    }
+
+    logger.debug(JSON.stringify(claim))
+    logger.debug(JSON.stringify(package))
+    logger.debug(JSON.stringify(repository))
 
     logger.debug(JSON.stringify(req.headers.identity))
     const identity = JSON.parse(req.headers.identity)
 
     // save the doc
     const save = Deployment.findOneAndUpdate(
-      { repository: repository.data.base },
+      { repository: repository.base },
       {
         $set: {
-          claim: await yaml.load(claim.data.content),
-          package: await yaml.load(package.data.content),
-          repository: repository.data.base,
+          claim: await yaml.load(claim),
+          package: await yaml.load(package),
+          repository: repository.base,
           owner: identity.username,
           createdAt: timeHelpers.currentTime()
         }
