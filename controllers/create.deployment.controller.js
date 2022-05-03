@@ -174,7 +174,7 @@ router.post('/import', async (req, res, next) => {
         upsert: true
       }
     )
-      .then((deployment) => {
+      .then(async (deployment) => {
         claim = claim.concat(`  transactionId: ${deployment._id}`)
         await axios.post(
           uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
