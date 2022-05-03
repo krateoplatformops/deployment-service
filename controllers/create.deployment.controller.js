@@ -145,7 +145,9 @@ router.post('/import', async (req, res, next) => {
       ])
     )
 
-    lo
+    logger.debug(JSON.stringify(claim.data))
+    logger.debug(JSON.stringify(package.data))
+    logger.debug(JSON.stringify(repository.data))
 
     const identity = JSON.parse(req.headers.identity)
 
