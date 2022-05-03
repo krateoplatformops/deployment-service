@@ -150,6 +150,17 @@ router.post('/import', async (req, res, next) => {
     logger.debug(JSON.stringify(repository.data))
 
     const identity = JSON.parse(req.headers.identity)
+    logger.debug(JSON.stringify(identity))
+
+    logger.debug(
+      JSON.stringify({
+        claim: await yaml.load(claim.data.content),
+        package: await yaml.load(package.data.content),
+        repository: repository.data.base,
+        owner: identity.username,
+        createdAt: timeHelpers.currentTime()
+      })
+    )
 
     // save the doc
     const save = Deployment.findOneAndUpdate(
