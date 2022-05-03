@@ -9,6 +9,7 @@ const Deployment = mongoose.model('Deployment')
 const timeHelpers = require('../helpers/time.helpers')
 const uriHelpers = require('../helpers/uri.helpers')
 const stringHelpers = require('../helpers/string.helpers')
+const { logger } = require('../helpers/logger.helpers')
 
 const { envConstants } = require('../constants')
 
@@ -29,6 +30,8 @@ router.post('/', async (req, res, next) => {
       parsed.domain
     ])
     const endpoint = (await axios.get(endpointUrl)).data
+
+    logger.debug(JSON.stringify(endpoint))
 
     if (!endpoint) {
       throw new Error('Unsupported domain')
@@ -68,6 +71,10 @@ router.post('/', async (req, res, next) => {
       default:
         throw new Error('Unsupported domain')
     }
+
+    logger.debug(JSON.stringify(claim.data))
+    logger.debug(JSON.stringify(package.data))
+    logger.debug(JSON.stringify(repo.data))
 
     const identity = JSON.parse(req.headers.identity)
 
@@ -137,6 +144,8 @@ router.post('/import', async (req, res, next) => {
         stringHelpers.to64(req.body.url)
       ])
     )
+
+    lo
 
     const identity = JSON.parse(req.headers.identity)
 
