@@ -149,8 +149,8 @@ router.post('/import', async (req, res, next) => {
     logger.debug(JSON.stringify(package.data))
     logger.debug(JSON.stringify(repository.data))
 
+    logger.debug(JSON.stringify(req.headers.identity))
     const identity = JSON.parse(req.headers.identity)
-    logger.debug(JSON.stringify(identity))
 
     // save the doc
     const save = Deployment.findOneAndUpdate(
