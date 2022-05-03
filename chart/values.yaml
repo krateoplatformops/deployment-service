@@ -3,7 +3,7 @@ registry:
     deployment: ghcr.io/krateoplatformops/deployment-service:latest
 
 log:
-  level: "debug"
+  level: "info"
 
 deployment:
   host: "deployment.krateo.site"

@@ -96,7 +96,7 @@ router.post('/', async (req, res, next) => {
     package = nunjucks.renderString(package.data.content, placeholder)
 
     // save the doc
-    const save = Deployment.create({
+    Deployment.create({
       claim: await yaml.load(claim),
       package: await yaml.load(package),
       owner: identity.username,
@@ -104,11 +104,16 @@ router.post('/', async (req, res, next) => {
       createdAt: timeHelpers.currentTime(),
       repository: repository
     })
-      .then((deployment) => {
-        // TODO: must to call kube-bdrige
-        // claim = claim.concat(`  transactionId: ${'transactionId'}`)
-        //stringHelpers.to64(claim)
-        //...
+      .then(async (deployment) => {
+        claim = claim.concat(`  transactionId: ${deployment._id}`)
+        await axios.post(
+          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
+          {
+            encoding: 'base64',
+            claim: stringHelpers.to64(claim),
+            package: stringHelpers.to64(package)
+          }
+        )
         res.status(200).json(deployment)
       })
       .catch((err) => {
@@ -170,11 +175,15 @@ router.post('/import', async (req, res, next) => {
       }
     )
       .then((deployment) => {
-        // TODO: must to call kube-bdrige
-        // claim = claim.concat(`  transactionId: ${'transactionId'}`)
-        // stringHelpers.to64(claim)
-        // ...
-        // post kube-bridge.krateo-system.svc /apply
+        claim = claim.concat(`  transactionId: ${deployment._id}`)
+        await axios.post(
+          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
+          {
+            encoding: 'base64',
+            claim: stringHelpers.to64(claim),
+            package: stringHelpers.to64(package)
+          }
+        )
         res.status(200).json(deployment)
       })
       .catch((err) => {

@@ -5,5 +5,6 @@ module.exports = {
   TEMPLATE_URI: process.env.TEMPLATE_URI,
   ENDPOINT_URI: process.env.ENDPOINT_URI,
   GIT_URI: process.env.GIT_URI,
-  ARGOCD_URI: process.env.ARGOCD_URI
+  ARGOCD_URI: process.env.ARGOCD_URI,
+  BRIDGE_URI: process.env.BRIDGE_URI
 }
