@@ -105,13 +105,17 @@ router.post('/', async (req, res, next) => {
       repository: repository
     })
       .then(async (deployment) => {
-        claim = claim.concat(`  transactionId: ${deployment._id}`)
         await axios.post(
           uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
           {
             encoding: 'base64',
             claim: stringHelpers.to64(claim),
             package: stringHelpers.to64(package)
+          },
+          {
+            headers: {
+              'X-Transaction-Id': deployment._id
+            }
           }
         )
         res.status(200).json(deployment)
@@ -130,7 +134,6 @@ router.post('/import', async (req, res, next) => {
     let package = null
     let repository = null
 
-    // FIXME: get target from endpoint
     const parsed = uriHelpers.parse(req.body.url)
 
     // get endpoint settings
@@ -201,13 +204,17 @@ router.post('/import', async (req, res, next) => {
       }
     )
       .then(async (deployment) => {
-        claim = claim.concat(`  transactionId: ${deployment._id}`)
         await axios.post(
           uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
           {
             encoding: 'base64',
             claim: stringHelpers.to64(claim),
             package: stringHelpers.to64(package)
+          },
+          {
+            headers: {
+              'X-Transaction-Id': deployment._id
+            }
           }
         )
         res.status(200).json(deployment)
