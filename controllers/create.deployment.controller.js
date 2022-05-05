@@ -14,6 +14,7 @@ const { logger } = require('../helpers/logger.helpers')
 const { envConstants } = require('../constants')
 
 router.post('/', async (req, res, next) => {
+  let doc = null
   try {
     const url = uriHelpers.concatUrl([
       envConstants.TEMPLATE_URI,
@@ -40,6 +41,18 @@ router.post('/', async (req, res, next) => {
     let claim = null
     let package = null
     let repository = null
+
+    const identity = JSON.parse(req.headers.identity)
+
+    // create empty doc
+    doc = await Deployment.create({
+      claim: {},
+      package: {},
+      owner: identity.username,
+      templateRepository: template.url,
+      createdAt: timeHelpers.currentTime(),
+      repository: 'repository'
+    })
 
     switch (endpoint?.type) {
       case 'github':
@@ -76,8 +89,6 @@ router.post('/', async (req, res, next) => {
     logger.debug(JSON.stringify(package.data))
     logger.debug(JSON.stringify(repository.data))
 
-    const identity = JSON.parse(req.headers.identity)
-
     // placeholders
     nunjucks.configure({
       noCache: true,
@@ -89,21 +100,26 @@ router.post('/', async (req, res, next) => {
       owner: identity.username,
       domain: parsed.domain,
       schema: parsed.schema,
-      apiUrl: endpoint.target
+      apiUrl: endpoint.target,
+      deploymentId: doc._id
     }
 
     claim = nunjucks.renderString(claim.data.content, placeholder)
     package = nunjucks.renderString(package.data.content, placeholder)
 
     // save the doc
-    Deployment.create({
-      claim: await yaml.load(claim),
-      package: await yaml.load(package),
-      owner: identity.username,
-      templateId: req.body.templateId,
-      createdAt: timeHelpers.currentTime(),
-      repository: repository
-    })
+    Deployment.findByIdAndUpdate(
+      doc._id,
+      {
+        claim: await yaml.load(claim),
+        package: await yaml.load(package),
+        repository
+      },
+      {
+        new: true,
+        upsert: true
+      }
+    )
       .then(async (deployment) => {
         await axios.post(
           uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
@@ -114,7 +130,7 @@ router.post('/', async (req, res, next) => {
           },
           {
             headers: {
-              'X-Transaction-Id': deployment._id
+              'X-Deployment-Id': deployment._id
             }
           }
         )
@@ -124,6 +140,9 @@ router.post('/', async (req, res, next) => {
         next(err)
       })
   } catch (error) {
+    if (doc) {
+      await Deployment.findByIdAndDelete(doc._id)
+    }
     next(error)
   }
 })
@@ -186,17 +205,26 @@ router.post('/import', async (req, res, next) => {
     logger.debug(JSON.stringify(req.headers.identity))
     const identity = JSON.parse(req.headers.identity)
 
+    claim = yaml.load(claim)
+    package = yaml.load(package)
+
+    const payload = {
+      claim,
+      package,
+      repository: repository.base,
+      owner: identity.username,
+      createdAt: timeHelpers.currentTime()
+    }
+
+    if (claim.metadata.deploymentId) {
+      payload._id = claim.metadata.deploymentId
+    }
+
     // save the doc
-    const save = Deployment.findOneAndUpdate(
+    Deployment.findOneAndUpdate(
       { repository: repository.base },
       {
-        $set: {
-          claim: await yaml.load(claim),
-          package: await yaml.load(package),
-          repository: repository.base,
-          owner: identity.username,
-          createdAt: timeHelpers.currentTime()
-        }
+        $set: payload
       },
       {
         new: true,
@@ -213,7 +241,7 @@ router.post('/import', async (req, res, next) => {
           },
           {
             headers: {
-              'X-Transaction-Id': deployment._id
+              'X-Deployment-Id': deployment._id
             }
           }
         )

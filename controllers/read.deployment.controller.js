@@ -118,6 +118,16 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
           })
         )
         break
+      case 'kubernetes':
+        content = (
+          await axios.get(
+            uriHelpers.concatUrl([
+              envConstants.KUBERNETES_URI,
+              stringHelpers.to64(plugin.value)
+            ])
+          )
+        ).data
+        break
       default:
         throw new Error(`Unsupported plugin type: ${req.params.plugin}`)
     }

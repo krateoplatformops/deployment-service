@@ -6,11 +6,13 @@ const { dbConstants } = require('../constants')
 const deploymentSchema = new Schema({
   claim: {
     type: Object,
-    required: true
+    required: true,
+    default: {}
   },
   package: {
     type: Object,
-    required: true
+    required: true,
+    default: {}
   },
   owner: {
     type: String,
@@ -43,6 +45,10 @@ const deploymentSchema = new Schema({
   repository: {
     type: String,
     required: true
+  },
+  templateRepository: {
+    type: String,
+    required: false
   }
 })
 
