@@ -205,19 +205,18 @@ router.post('/import', async (req, res, next) => {
     logger.debug(JSON.stringify(req.headers.identity))
     const identity = JSON.parse(req.headers.identity)
 
-    claim = yaml.load(claim)
-    package = yaml.load(package)
+    const jsonClaim = yaml.load(claim)
 
     const payload = {
-      claim,
-      package,
+      claim: jsonClaim,
+      package: yaml.load(package),
       repository: repository.base,
       owner: identity.username,
       createdAt: timeHelpers.currentTime()
     }
 
-    if (claim.metadata.deploymentId) {
-      payload._id = claim.metadata.deploymentId
+    if (jsonClaim.metadata.deploymentId) {
+      payload._id = jsonClaim.metadata.deploymentId
     }
 
     // save the doc
