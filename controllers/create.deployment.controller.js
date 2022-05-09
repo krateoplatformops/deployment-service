@@ -72,7 +72,9 @@ router.post('/', async (req, res, next) => {
             stringHelpers.to64('defaults/package.yaml')
           ])
         )
-        repository = `https://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
+        // get endpoint
+        const ep = uriHelpers.parse(endpoint.target)
+        repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
         break
       default:
         throw new Error('Unsupported domain')
