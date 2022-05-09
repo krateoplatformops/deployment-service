@@ -72,14 +72,7 @@ router.post('/', async (req, res, next) => {
             stringHelpers.to64('defaults/package.yaml')
           ])
         )
-        const repo = await axios.get(
-          uriHelpers.concatUrl([
-            envConstants.GIT_URI,
-            'repository',
-            stringHelpers.to64(template.url)
-          ])
-        )
-        repository = repo.data.base
+        repository = `https://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
         break
       default:
         throw new Error('Unsupported domain')
@@ -87,7 +80,7 @@ router.post('/', async (req, res, next) => {
 
     logger.debug(JSON.stringify(claim.data))
     logger.debug(JSON.stringify(package.data))
-    logger.debug(JSON.stringify(repository.data))
+    logger.debug(JSON.stringify(repository))
 
     // placeholders
     nunjucks.configure({
