@@ -71,6 +71,7 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
                 envConstants.GIT_URI,
                 'file',
                 stringHelpers.to64(d.repository),
+                stringHelpers.to64(plugin.endpointName),
                 stringHelpers.to64(v)
               ])
             )
@@ -93,6 +94,7 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
                   envConstants.GIT_URI,
                   'pipeline',
                   stringHelpers.to64(d.repository),
+                  stringHelpers.to64(plugin.endpointName),
                   stringHelpers.to64(v)
                 ])
               )
@@ -107,6 +109,7 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
                   envConstants.GIT_URI,
                   'pipeline',
                   stringHelpers.to64(uriHelpers.concatUrl(scopes)),
+                  stringHelpers.to64(plugin.endpointName),
                   stringHelpers.to64(name[name.length - 1].trim())
                 ])
               )

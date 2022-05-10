@@ -148,13 +148,11 @@ router.post('/import', async (req, res, next) => {
     let package = null
     let repository = null
 
-    const parsed = uriHelpers.parse(req.body.url)
-
     // get endpoint settings
     const endpointUrl = uriHelpers.concatUrl([
       envConstants.ENDPOINT_URI,
-      'domain',
-      parsed.domain
+      'name',
+      req.body.endpoint
     ])
     const endpoint = (await axios.get(endpointUrl)).data
 
