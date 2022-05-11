@@ -27,10 +27,18 @@ router.post('/', async (req, res, next) => {
     // get endpoint settings
     const endpointUrl = uriHelpers.concatUrl([
       envConstants.ENDPOINT_URI,
-      'domain',
-      parsed.domain
+      'name',
+      template.endpointName
     ])
     const endpoint = (await axios.get(endpointUrl)).data
+
+    const endpointData = stringHelpers.to64(
+      JSON.stringify({
+        target: endpoint.target,
+        secret: endpoint.secret,
+        type: endpoint.type
+      })
+    )
 
     logger.debug(JSON.stringify(endpoint))
 
@@ -61,6 +69,7 @@ router.post('/', async (req, res, next) => {
             envConstants.GIT_URI,
             'file',
             stringHelpers.to64(template.url),
+            endpointData,
             stringHelpers.to64('defaults/claim.yaml')
           ])
         )
@@ -69,6 +78,7 @@ router.post('/', async (req, res, next) => {
             envConstants.GIT_URI,
             'file',
             stringHelpers.to64(template.url),
+            endpointData,
             stringHelpers.to64('defaults/package.yaml')
           ])
         )
@@ -158,13 +168,23 @@ router.post('/import', async (req, res, next) => {
 
     logger.debug(JSON.stringify(endpoint))
 
+    const endpointData = stringHelpers.to64(
+      JSON.stringify({
+        target: endpoint.target,
+        secret: endpoint.secret,
+        type: endpoint.type
+      })
+    )
+    const url = stringHelpers.to64(req.body.url)
+
     switch (endpoint?.type) {
       case 'github':
         claim = await axios.get(
           uriHelpers.concatUrl([
             envConstants.GIT_URI,
             'file',
-            stringHelpers.to64(req.body.url),
+            url,
+            endpointData,
             stringHelpers.to64('claim.yaml')
           ])
         )
@@ -172,16 +192,13 @@ router.post('/import', async (req, res, next) => {
           uriHelpers.concatUrl([
             envConstants.GIT_URI,
             'file',
-            stringHelpers.to64(req.body.url),
+            url,
+            endpointData,
             stringHelpers.to64('package.yaml')
           ])
         )
         repository = await axios.get(
-          uriHelpers.concatUrl([
-            envConstants.GIT_URI,
-            'repository',
-            stringHelpers.to64(req.body.url)
-          ])
+          uriHelpers.concatUrl([envConstants.GIT_URI, 'repository', url])
         )
         claim = claim.data.content
         package = package.data.content

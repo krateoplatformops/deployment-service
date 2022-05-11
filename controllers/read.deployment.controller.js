@@ -51,16 +51,40 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
       throw new Error('Plugin not found')
     }
 
+    // get endpoint data if specified
+    let endpointData = null
+    if (plugin.endpointName) {
+      const endpointUrl = uriHelpers.concatUrl([
+        envConstants.ENDPOINT_URI,
+        'name',
+        plugin.endpointName
+      ])
+      const endpoint = (await axios.get(endpointUrl)).data
+      endpointData = stringHelpers.to64(
+        JSON.stringify({
+          target: endpoint.target,
+          secret: endpoint.secret,
+          type: endpoint.type
+        })
+      )
+    }
+
     let content = null
 
     switch (req.params.plugin) {
       case 'argocd':
         const url = new URL(
-          uriHelpers.concatUrl([envConstants.ARGOCD_URI, plugin.value])
+          uriHelpers.concatUrl([
+            envConstants.ARGOCD_URI,
+            endpointData,
+            plugin.value
+          ])
         )
         Object.keys(req.query).forEach((key) =>
           url.searchParams.append(key, req.query[key])
         )
+        console.log(url.toString())
+
         content = (await axios.get(url.toString())).data
         break
       case 'doc':
@@ -71,7 +95,7 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
                 envConstants.GIT_URI,
                 'file',
                 stringHelpers.to64(d.repository),
-                stringHelpers.to64(plugin.endpointName),
+                endpointData,
                 stringHelpers.to64(v)
               ])
             )
@@ -94,7 +118,7 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
                   envConstants.GIT_URI,
                   'pipeline',
                   stringHelpers.to64(d.repository),
-                  stringHelpers.to64(plugin.endpointName),
+                  endpointData,
                   stringHelpers.to64(v)
                 ])
               )
@@ -109,7 +133,7 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
                   envConstants.GIT_URI,
                   'pipeline',
                   stringHelpers.to64(uriHelpers.concatUrl(scopes)),
-                  stringHelpers.to64(plugin.endpointName),
+                  endpointData,
                   stringHelpers.to64(name[name.length - 1].trim())
                 ])
               )
