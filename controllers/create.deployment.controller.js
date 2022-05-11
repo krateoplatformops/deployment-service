@@ -162,7 +162,7 @@ router.post('/import', async (req, res, next) => {
     const endpointUrl = uriHelpers.concatUrl([
       envConstants.ENDPOINT_URI,
       'name',
-      req.body.endpoint
+      req.body.endpointName
     ])
     const endpoint = (await axios.get(endpointUrl)).data
 
