@@ -2,11 +2,15 @@ apiVersion: v2
 name: deployment-service
 description: Krateo PlatformOps Deployment Service
 type: application
+icon: "https://github.com/krateoplatformops/community/blob/main/logos/black/icon.svg"
 
-version: 0.1.0
-appVersion: 0.1.0
+version: VERSION
+appVersion: VERSION
 
 maintainers:
   - name: Mauro Sala
     email: mauro.sala@kiratech.it
     url: https://krateo.io
+  - name: Luca Sepe
+    email: luca.sepe@kiratech.it
+    url: https://www.kiratech.it
