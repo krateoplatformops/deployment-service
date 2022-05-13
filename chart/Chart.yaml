@@ -7,6 +7,11 @@ icon: "https://github.com/krateoplatformops/community/blob/main/logos/black/icon
 version: VERSION
 appVersion: VERSION
 
+dependencies:
+  - name: helm-chart-library
+    version: 0.1.3
+    repository: http://charts.krateo.io
+
 maintainers:
   - name: Mauro Sala
     email: mauro.sala@kiratech.it
