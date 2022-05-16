@@ -28,7 +28,13 @@ router.get('/:id', async (req, res, next) => {
       if (error) {
         next(error)
       }
-      res.status(200).json(deployment)
+      if (!deployment) {
+        res.status(404).json({
+          message: `Deployment with id ${id} is not found`
+        })
+      } else {
+        res.status(200).json(deployment)
+      }
     })
   } catch (error) {
     next(error)
@@ -83,7 +89,7 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
         Object.keys(req.query).forEach((key) =>
           url.searchParams.append(key, req.query[key])
         )
-        console.log(url.toString())
+        // console.log(url.toString())
 
         content = (await axios.get(url.toString())).data
         break

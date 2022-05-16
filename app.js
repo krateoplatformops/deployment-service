@@ -26,8 +26,8 @@ const errorLoggerMiddleware = require('./middlewares/error-logger.middleware')
 app.use(callLoggerMiddleware)
 
 /* OpenAPI */
-// const swaggerDocument = require('./openapi')
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+const swaggerDocument = require('./openapi')
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 /* Routes */
 const statusRoutes = require('./routes/status.routes')

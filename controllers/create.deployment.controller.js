@@ -141,7 +141,8 @@ router.post('/', async (req, res, next) => {
         )
         res.status(200).json(deployment)
       })
-      .catch((err) => {
+      .catch(async (err) => {
+        await Deployment.findByIdAndDelete(doc._id)
         next(err)
       })
   } catch (error) {
