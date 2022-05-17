@@ -89,7 +89,6 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
         Object.keys(req.query).forEach((key) =>
           url.searchParams.append(key, req.query[key])
         )
-        // console.log(url.toString())
 
         content = (await axios.get(url.toString())).data
         break
@@ -133,12 +132,15 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
                 value: call.data.content
               }
             } else {
+              const parsed = uriHelpers.parse(d.repository)
               const name = v.split(']')
               const call = await axios.get(
                 uriHelpers.concatUrl([
                   envConstants.GIT_URI,
                   'pipeline',
-                  stringHelpers.to64(uriHelpers.concatUrl(scopes)),
+                  stringHelpers.to64(
+                    uriHelpers.concatUrl([parsed.domain, ...scopes])
+                  ),
                   endpointData,
                   stringHelpers.to64(name[name.length - 1].trim())
                 ])
