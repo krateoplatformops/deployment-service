@@ -158,6 +158,7 @@ router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
           await axios.get(
             uriHelpers.concatUrl([
               envConstants.KUBERNETES_URI,
+              'resources',
               stringHelpers.to64(plugin.value)
             ])
           )
