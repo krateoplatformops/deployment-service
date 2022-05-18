@@ -206,7 +206,7 @@ router.post('/import', async (req, res, next) => {
         repository = repository.data
         break
       default:
-        throw new Error('Unsupported domain')
+        throw new Error('Unsupported endpoint')
     }
 
     logger.debug(JSON.stringify(claim))
