@@ -8,7 +8,7 @@ const stringHelpers = require('../helpers/string.helpers')
 const Deployment = mongoose.model('Deployment')
 const { envConstants } = require('../constants')
 
-router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
+router.all('/plugins/:id/:plugin/:name', async (req, res, next) => {
   try {
     const d = await Deployment.findById(req.params.id).lean()
 

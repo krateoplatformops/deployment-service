@@ -41,6 +41,6 @@ jobs:
           tags: "ghcr.io/krateoplatformops/${{ github.event.repository.name }}:${{ env.IMAGE_TAG}}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
-          build-args: "VERSION=0.1.0-${{ steps.slug.outputs.sha8 }}"
+          build-args: "VERSION=0.0.0-${{ steps.slug.outputs.sha8 }}"
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

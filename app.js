@@ -23,11 +23,11 @@ require('./models/deployment.model')
 const callLoggerMiddleware = require('./middlewares/call-logger.middleware')
 const errorLoggerMiddleware = require('./middlewares/error-logger.middleware')
 
-app.use(callLoggerMiddleware)
-
 /* OpenAPI */
 const swaggerDocument = require('./openapi')
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+
+app.use(callLoggerMiddleware)
 
 /* Routes */
 const statusRoutes = require('./routes/status.routes')
