@@ -10,7 +10,6 @@ const response = {
 
 router.get('/ping', (req, res) => {
   res.status(200).json(response)
-  return res.end()
 })
 
 router.get('/healthz', (req, res) => {

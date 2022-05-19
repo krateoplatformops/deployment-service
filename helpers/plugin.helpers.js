@@ -1,5 +1,3 @@
-const express = require('express')
-const router = express.Router()
 const mongoose = require('mongoose')
 const axios = require('axios')
 
@@ -8,7 +6,7 @@ const stringHelpers = require('../helpers/string.helpers')
 const Deployment = mongoose.model('Deployment')
 const { envConstants } = require('../constants')
 
-router.all('/plugins/:id/:plugin/:name', async (req, res, next) => {
+const processPlugin = async (req, res, next) => {
   try {
     const d = await Deployment.findById(req.params.id).lean()
 
@@ -152,6 +150,8 @@ router.all('/plugins/:id/:plugin/:name', async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-})
+}
 
-module.exports = router
+module.exports = {
+  processPlugin
+}
