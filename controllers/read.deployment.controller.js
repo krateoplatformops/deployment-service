@@ -19,6 +19,10 @@ router.get('/', async (req, res, next) => {
   }
 })
 
+router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
+  pluginHelpers.processPlugin(req, res, next)
+})
+
 router.get('/:id', async (req, res, next) => {
   try {
     Deployment.findById(req.params.id).exec((error, deployment) => {
@@ -36,10 +40,6 @@ router.get('/:id', async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-})
-
-router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
-  pluginHelpers.processPlugin(req, res, next)
 })
 
 module.exports = router
