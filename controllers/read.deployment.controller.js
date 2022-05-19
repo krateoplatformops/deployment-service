@@ -164,7 +164,6 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
         ).data
         break
       case 'keptn':
-        console.log(req.method)
         content = (
           await axios({
             method: req.method,

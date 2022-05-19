@@ -11,13 +11,13 @@ WORKDIR /usr/src/app
 # where available (npm@5+)
 COPY package*.json ./
 
-RUN npm version $VERSION
-
 # RUN npm install
 # If you are building your code for production
 RUN npm ci --only=production
 
 # Bundle app source
 COPY . .
+
+RUN sed -i "s/VERSION/$VERSION/g" ./package.json
 
 CMD [ "node", "server.js" ]

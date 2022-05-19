@@ -1,6 +1,6 @@
 {
   "name": "deployment-service",
-  "version": "0.1.1",
+  "version": "VERSION",
   "description": "Krateo Deployment Service",
   "main": "server.js",
   "scripts": {
