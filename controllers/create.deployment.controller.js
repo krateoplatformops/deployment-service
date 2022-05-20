@@ -12,7 +12,6 @@ const stringHelpers = require('../helpers/string.helpers')
 const { logger } = require('../helpers/logger.helpers')
 
 const { envConstants } = require('../constants')
-const pluginHelpers = require('../helpers/plugin.helpers')
 
 router.post('/', async (req, res, next) => {
   let doc = null
@@ -264,10 +263,6 @@ router.post('/import', async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-})
-
-router.post('/:id/plugins/:plugin/:name', async (req, res, next) => {
-  pluginHelpers.processPlugin(req, res, next)
 })
 
 module.exports = router

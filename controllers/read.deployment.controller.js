@@ -3,7 +3,6 @@ const router = express.Router()
 const mongoose = require('mongoose')
 
 const Deployment = mongoose.model('Deployment')
-const pluginHelpers = require('../helpers/plugin.helpers')
 
 router.get('/', async (req, res, next) => {
   try {
@@ -19,10 +18,6 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-router.get('/:id/plugins/:plugin/:name', async (req, res, next) => {
-  pluginHelpers.processPlugin(req, res, next)
-})
-
 router.get('/:id', async (req, res, next) => {
   try {
     Deployment.findById(req.params.id).exec((error, deployment) => {
@@ -31,7 +26,7 @@ router.get('/:id', async (req, res, next) => {
       }
       if (!deployment) {
         res.status(404).json({
-          message: `Deployment with id ${id} is not found`
+          message: `Deployment with id ${req.params.id} is not found`
         })
       } else {
         res.status(200).json(deployment)
