@@ -86,7 +86,7 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
             if (!scopes) {
               const call = await axios.get(
                 uriHelpers.concatUrl([
-                  envConstants.GIT_URI,
+                  envConstants.PIPELINE_URI,
                   'pipeline',
                   stringHelpers.to64(d.repository),
                   endpointData,
@@ -143,7 +143,17 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
             data: req.body
           })
         ).data
-
+        break
+      case 'sonarcloud':
+        content = (
+          await axios.get(
+            uriHelpers.concatUrl([
+              envConstants.SONARCLOUD_URI,
+              endpointData,
+              stringHelpers.to64(plugin.value)
+            ])
+          )
+        ).data
         break
       default:
         throw new Error(`Unsupported plugin type: ${req.params.plugin}`)
