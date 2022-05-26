@@ -16,7 +16,7 @@ router.delete('/:id', async (req, res, next) => {
       } else {
         // call kube bridge
         await axios.delete(
-          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
+          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
           {
             encoding: 'base64',
             claim: stringHelpers.to64(yaml.dump(deployment.claim)),

@@ -127,7 +127,7 @@ router.post('/', async (req, res, next) => {
     )
       .then(async (deployment) => {
         await axios.post(
-          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
+          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
           {
             encoding: 'base64',
             claim: stringHelpers.to64(claim),
@@ -243,7 +243,7 @@ router.post('/import', async (req, res, next) => {
     )
       .then(async (deployment) => {
         await axios.post(
-          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'apply']),
+          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
           {
             encoding: 'base64',
             claim: stringHelpers.to64(claim),
