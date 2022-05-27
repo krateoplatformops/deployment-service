@@ -9,6 +9,6 @@ module.exports = {
   BRIDGE_URI: process.env.BRIDGE_URI,
   KUBERNETES_URI: process.env.KUBERNETES_URI,
   KEPTN_URI: process.env.KEPTN_URI,
-  SONARCLOUD_URI: process.env.SONARCLOUD_URI,
+  CODEQUALITY_URI: process.env.CODEQUALITY_URI,
   PIPELINE_URI: process.env.PIPELINE_URI
 }

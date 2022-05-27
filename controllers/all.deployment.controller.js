@@ -144,11 +144,11 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
           })
         ).data
         break
-      case 'sonarcloud':
+      case 'codequality':
         content = (
           await axios.get(
             uriHelpers.concatUrl([
-              envConstants.SONARCLOUD_URI,
+              envConstants.CODEQUALITY_URI,
               endpointData,
               stringHelpers.to64(plugin.value)
             ])
