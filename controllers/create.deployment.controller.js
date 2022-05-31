@@ -10,7 +10,6 @@ const timeHelpers = require('../helpers/time.helpers')
 const uriHelpers = require('../helpers/uri.helpers')
 const stringHelpers = require('../helpers/string.helpers')
 const { logger } = require('../helpers/logger.helpers')
-
 const { envConstants } = require('../constants')
 
 router.post('/', async (req, res, next) => {
