@@ -3,6 +3,7 @@ const router = express.Router()
 const mongoose = require('mongoose')
 const Deployment = mongoose.model('Deployment')
 const yaml = require('js-yaml')
+const axios = require('axios')
 
 router.delete('/:id', async (req, res, next) => {
   try {
