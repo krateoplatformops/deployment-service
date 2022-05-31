@@ -104,6 +104,9 @@ router.post('/', async (req, res, next) => {
       deploymentId: doc._id
     }
 
+    Mustache.escape = (text) => {
+      return text
+    }
     claim = Mustache.render(claim.data.content, placeholder)
     package = Mustache.render(package.data.content, placeholder)
 
