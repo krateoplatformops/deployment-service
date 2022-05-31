@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
 const axios = require('axios')
-const nunjucks = require('nunjucks')
+const Mustache = require('mustache')
 const yaml = require('js-yaml')
 
 const Deployment = mongoose.model('Deployment')
@@ -95,11 +95,6 @@ router.post('/', async (req, res, next) => {
     logger.debug(JSON.stringify(repository))
 
     // placeholders
-    nunjucks.configure({
-      noCache: true,
-      autoescape: true,
-      tags: { variableStart: '${{' }
-    })
     const placeholder = {
       ...req.body.metadata,
       owner: identity.username,
@@ -109,8 +104,8 @@ router.post('/', async (req, res, next) => {
       deploymentId: doc._id
     }
 
-    claim = nunjucks.renderString(claim.data.content, placeholder)
-    package = nunjucks.renderString(package.data.content, placeholder)
+    claim = Mustache.render(claim.data.content, placeholder)
+    package = Mustache.render(package.data.content, placeholder)
 
     // save the doc
     Deployment.findByIdAndUpdate(
