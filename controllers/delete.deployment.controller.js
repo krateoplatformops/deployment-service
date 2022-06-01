@@ -23,13 +23,13 @@ router.delete('/:id', async (req, res, next) => {
         await axios.delete(
           uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
           {
-            encoding: 'base64',
-            claim: stringHelpers.to64(yaml.dump(deployment.claim)),
-            package: stringHelpers.to64(yaml.dump(deployment.package))
-          },
-          {
             headers: {
               'X-Deployment-Id': deployment._id
+            },
+            data: {
+              encoding: 'base64',
+              claim: stringHelpers.to64(yaml.dump(deployment.claim)),
+              package: stringHelpers.to64(yaml.dump(deployment.package))
             }
           }
         )
@@ -40,6 +40,7 @@ router.delete('/:id', async (req, res, next) => {
       }
     })
   } catch (error) {
+    console.log(error)
     next(error)
   }
 })
