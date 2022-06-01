@@ -58,7 +58,8 @@ router.post('/', async (req, res, next) => {
       owner: identity.username,
       templateRepository: template.url,
       createdAt: timeHelpers.currentTime(),
-      repository: 'repository'
+      repository: 'repository',
+      endpointName: template.endpointName
     })
 
     switch (endpoint?.type) {

@@ -49,6 +49,10 @@ const deploymentSchema = new Schema({
   templateRepository: {
     type: String,
     required: false
+  },
+  endpointName: {
+    type: String,
+    required: true
   }
 })
 
