@@ -120,15 +120,16 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
         )
         break
       case 'kubernetes':
-        content = (
-          await axios.get(
-            uriHelpers.concatUrl([
-              envConstants.KUBERNETES_URI,
-              'resources',
-              stringHelpers.to64(plugin.value)
-            ])
-          )
-        ).data
+        const up = [
+          envConstants.KUBERNETES_URI,
+          'resources',
+          stringHelpers.to64(plugin.value)
+        ]
+        if (plugin.params) {
+          up.push(stringHelpers.to64(JSON.stringify(plugin.params)))
+        }
+
+        content = (await axios.get(uriHelpers.concatUrl(up))).data
         break
       case 'keptn':
         content = (
