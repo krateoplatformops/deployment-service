@@ -110,12 +110,15 @@ router.post('/', async (req, res, next) => {
     claim = Mustache.render(claim.data.content, placeholder)
     package = Mustache.render(package.data.content, placeholder)
 
+    claim = yaml.load(claim)
+    claim.spec._values = JSON.stringify(placeholder)
+
     // save the doc
     Deployment.findByIdAndUpdate(
       doc._id,
       {
-        claim: await yaml.load(claim),
-        package: await yaml.load(package),
+        claim,
+        package: yaml.load(package),
         repository
       },
       {
