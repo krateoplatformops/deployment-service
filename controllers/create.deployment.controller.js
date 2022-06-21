@@ -131,7 +131,7 @@ router.post('/', async (req, res, next) => {
           uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
           {
             encoding: 'base64',
-            claim: stringHelpers.to64(claim),
+            claim: stringHelpers.to64(yaml.dump(claim)),
             package: stringHelpers.to64(package)
           },
           {
