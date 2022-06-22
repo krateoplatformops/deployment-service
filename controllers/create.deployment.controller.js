@@ -90,6 +90,7 @@ router.post('/', async (req, res, next) => {
         break
       case 'bitbucket':
         repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
+        break
       default:
         throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
     }
