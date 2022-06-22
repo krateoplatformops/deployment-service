@@ -62,32 +62,36 @@ router.post('/', async (req, res, next) => {
       endpointName: template.endpointName
     })
 
+    // get files
+    claim = await axios.get(
+      uriHelpers.concatUrl([
+        envConstants.GIT_URI,
+        'file',
+        stringHelpers.to64(template.url),
+        endpointData,
+        stringHelpers.to64('defaults/claim.yaml')
+      ])
+    )
+    package = await axios.get(
+      uriHelpers.concatUrl([
+        envConstants.GIT_URI,
+        'file',
+        stringHelpers.to64(template.url),
+        endpointData,
+        stringHelpers.to64('defaults/package.yaml')
+      ])
+    )
+    // get endpoint
+    const ep = uriHelpers.parse(endpoint.target)
+
     switch (endpoint?.type) {
       case 'github':
-        claim = await axios.get(
-          uriHelpers.concatUrl([
-            envConstants.GIT_URI,
-            'file',
-            stringHelpers.to64(template.url),
-            endpointData,
-            stringHelpers.to64('defaults/claim.yaml')
-          ])
-        )
-        package = await axios.get(
-          uriHelpers.concatUrl([
-            envConstants.GIT_URI,
-            'file',
-            stringHelpers.to64(template.url),
-            endpointData,
-            stringHelpers.to64('defaults/package.yaml')
-          ])
-        )
-        // get endpoint
-        const ep = uriHelpers.parse(endpoint.target)
         repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
         break
+      case 'bitbucket':
+        repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
       default:
-        throw new Error('Unsupported domain')
+        throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
     }
 
     logger.debug(JSON.stringify(claim.data))
