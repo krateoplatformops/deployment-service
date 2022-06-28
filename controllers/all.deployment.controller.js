@@ -25,6 +25,7 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
     }
 
     // get endpoint data if specified
+    let endpoint = null
     let endpointData = null
     if (plugin.endpointName) {
       const endpointUrl = uriHelpers.concatUrl([
@@ -32,7 +33,7 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
         'name',
         plugin.endpointName
       ])
-      const endpoint = (await axios.get(endpointUrl)).data
+      endpoint = (await axios.get(endpointUrl)).data
       endpointData = stringHelpers.to64(
         JSON.stringify({
           target: endpoint.target,
@@ -83,7 +84,12 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
             const regex = /(?<=\[)[^\]\[]*(?=])/gm
             const scopes = v.match(regex)
 
-            if (!scopes) {
+            let ext = false
+            if (scopes && endpoint.type === 'github') {
+              ext = true
+            }
+
+            if (!ext) {
               const call = await axios.get(
                 uriHelpers.concatUrl([
                   envConstants.PIPELINE_URI,
@@ -102,7 +108,7 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
               const name = v.split(']')
               const call = await axios.get(
                 uriHelpers.concatUrl([
-                  envConstants.GIT_URI,
+                  envConstants.PIPELINE_URI,
                   'pipeline',
                   stringHelpers.to64(
                     uriHelpers.concatUrl([parsed.domain, ...scopes])
