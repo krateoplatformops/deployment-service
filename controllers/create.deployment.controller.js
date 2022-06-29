@@ -12,22 +12,58 @@ const stringHelpers = require('../helpers/string.helpers')
 const { logger } = require('../helpers/logger.helpers')
 const { envConstants } = require('../constants')
 
-router.post('/', async (req, res, next) => {
+router.post(['/', '/import'], async (req, res, next) => {
   let doc = null
-  try {
-    const url = uriHelpers.concatUrl([
-      envConstants.TEMPLATE_URI,
-      req.body.templateId
-    ])
-    const template = (await axios.get(url)).data
+  let importing = false
 
-    const parsed = uriHelpers.parse(template.url)
+  if (req.path === '/import') {
+    importing = true
+  }
+
+  let deploymentId = null
+  try {
+    let template = null
+    let parsed = null
+    let url = null
+    let endpointName = null
+    let repoFolder = ''
+    let payload = null
+
+    const identity = JSON.parse(req.headers.identity)
+
+    if (!importing) {
+      const templateUrl = uriHelpers.concatUrl([
+        envConstants.TEMPLATE_URI,
+        req.body.templateId
+      ])
+      template = (await axios.get(templateUrl)).data
+      parsed = uriHelpers.parse(template.url)
+
+      endpointName = template.endpointName
+
+      // create empty doc if new deployment
+      doc = await Deployment.create({
+        claim: {},
+        package: {},
+        owner: identity.username,
+        templateRepository: template.url,
+        createdAt: timeHelpers.currentTime(),
+        repository: 'repository',
+        endpointName
+      })
+      deploymentId = doc._id
+      url = stringHelpers.to64(template.url)
+      repoFolder = 'defaults/'
+    } else {
+      url = stringHelpers.to64(req.body.url)
+      endpointName = req.body.endpointName
+    }
 
     // get endpoint settings
     const endpointUrl = uriHelpers.concatUrl([
       envConstants.ENDPOINT_URI,
       'name',
-      template.endpointName
+      endpointName
     ])
     const endpoint = (await axios.get(endpointUrl)).data
 
@@ -38,7 +74,6 @@ router.post('/', async (req, res, next) => {
         type: endpoint.type
       })
     )
-
     logger.debug(JSON.stringify(endpoint))
 
     if (!endpoint) {
@@ -49,95 +84,115 @@ router.post('/', async (req, res, next) => {
     let package = null
     let repository = null
 
-    const identity = JSON.parse(req.headers.identity)
-
-    // create empty doc
-    doc = await Deployment.create({
-      claim: {},
-      package: {},
-      owner: identity.username,
-      templateRepository: template.url,
-      createdAt: timeHelpers.currentTime(),
-      repository: 'repository',
-      endpointName: template.endpointName
-    })
-
     // get files
     claim = await axios.get(
       uriHelpers.concatUrl([
         envConstants.GIT_URI,
         'file',
-        stringHelpers.to64(template.url),
+        url,
         endpointData,
-        stringHelpers.to64('defaults/claim.yaml')
+        stringHelpers.to64(`${repoFolder}claim.yaml`)
       ])
     )
     package = await axios.get(
       uriHelpers.concatUrl([
         envConstants.GIT_URI,
         'file',
-        stringHelpers.to64(template.url),
+        url,
         endpointData,
-        stringHelpers.to64('defaults/package.yaml')
+        stringHelpers.to64(`${repoFolder}package.yaml`)
       ])
     )
+
     // get endpoint
     const ep = uriHelpers.parse(endpoint.target)
 
-    switch (endpoint?.type) {
-      case 'github':
-        repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
-        break
-      case 'bitbucket':
-        repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
-        break
-      default:
-        throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
+    if (!importing) {
+      switch (endpoint?.type) {
+        case 'github':
+          repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
+          break
+        case 'bitbucket':
+          repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
+          break
+        default:
+          throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
+      }
+    } else {
+      repository = (
+        await axios.get(
+          uriHelpers.concatUrl([
+            envConstants.GIT_URI,
+            'repository',
+            endpointData,
+            url
+          ])
+        )
+      ).data.base
     }
 
     logger.debug(JSON.stringify(claim.data))
     logger.debug(JSON.stringify(package.data))
     logger.debug(JSON.stringify(repository))
 
-    // placeholders
-    const placeholder = {
-      ...req.body.metadata,
-      owner: identity.username,
-      domain: parsed.domain,
-      schema: parsed.schema,
-      apiUrl: endpoint.target,
-      deploymentId: doc._id
+    if (!importing) {
+      // placeholders
+      const placeholder = {
+        ...req.body.metadata,
+        owner: identity.username,
+        domain: parsed.domain,
+        schema: parsed.schema,
+        apiUrl: endpoint.target,
+        deploymentId: doc._id
+      }
+
+      Mustache.escape = (text) => {
+        return text
+      }
+      claim = Mustache.render(claim.data.content, placeholder)
+      package = Mustache.render(package.data.content, placeholder)
+
+      claim = yaml.load(claim)
+      claim.spec._values = JSON.stringify(placeholder)
+
+      payload = { claim, package: yaml.load(package), repository }
+    } else {
+      claim = claim.data.content
+      package = package.data.content
+
+      const jsonClaim = yaml.load(claim)
+
+      payload = {
+        claim: jsonClaim,
+        endpointName,
+        package: yaml.load(package),
+        repository,
+        owner: identity.username,
+        createdAt: timeHelpers.currentTime()
+      }
+
+      if (jsonClaim.metadata.deploymentId) {
+        payload._id = jsonClaim.metadata.deploymentId
+        deploymentId = jsonClaim.metadata.deploymentId
+      }
     }
 
-    Mustache.escape = (text) => {
-      return text
+    if (!deploymentId) {
+      throw new Error('Deployment ID not found')
     }
-    claim = Mustache.render(claim.data.content, placeholder)
-    package = Mustache.render(package.data.content, placeholder)
-
-    claim = yaml.load(claim)
-    claim.spec._values = JSON.stringify(placeholder)
 
     // save the doc
-    Deployment.findByIdAndUpdate(
-      doc._id,
-      {
-        claim,
-        package: yaml.load(package),
-        repository
-      },
-      {
-        new: true,
-        upsert: true
-      }
-    )
+    Deployment.findByIdAndUpdate(deploymentId, payload, {
+      new: true,
+      upsert: true
+    })
       .then(async (deployment) => {
         await axios.post(
           uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
           {
             encoding: 'base64',
-            claim: stringHelpers.to64(yaml.dump(claim)),
-            package: stringHelpers.to64(package)
+            claim: stringHelpers.to64(yaml.dump(payload.claim)),
+            package: stringHelpers.to64(yaml.dump(payload.package))
           },
           {
             headers: {
@@ -148,125 +203,15 @@ router.post('/', async (req, res, next) => {
         res.status(200).json(deployment)
       })
       .catch(async (err) => {
-        await Deployment.findByIdAndDelete(doc._id)
+        console.log(err)
+        await Deployment.findByIdAndDelete(deploymentId)
         next(err)
       })
   } catch (error) {
-    if (doc) {
-      await Deployment.findByIdAndDelete(doc._id)
+    console.log(error)
+    if (deploymentId) {
+      await Deployment.findByIdAndDelete(deploymentId)
     }
-    next(error)
-  }
-})
-
-router.post('/import', async (req, res, next) => {
-  try {
-    let claim = null
-    let package = null
-    let repository = null
-
-    // get endpoint settings
-    const endpointUrl = uriHelpers.concatUrl([
-      envConstants.ENDPOINT_URI,
-      'name',
-      req.body.endpointName
-    ])
-    const endpoint = (await axios.get(endpointUrl)).data
-
-    logger.debug(JSON.stringify(endpoint))
-
-    const endpointData = stringHelpers.to64(
-      JSON.stringify({
-        target: endpoint.target,
-        secret: endpoint.secret,
-        type: endpoint.type
-      })
-    )
-    const url = stringHelpers.to64(req.body.url)
-
-    switch (endpoint?.type) {
-      case 'github':
-        claim = await axios.get(
-          uriHelpers.concatUrl([
-            envConstants.GIT_URI,
-            'file',
-            url,
-            endpointData,
-            stringHelpers.to64('claim.yaml')
-          ])
-        )
-        package = await axios.get(
-          uriHelpers.concatUrl([
-            envConstants.GIT_URI,
-            'file',
-            url,
-            endpointData,
-            stringHelpers.to64('package.yaml')
-          ])
-        )
-        repository = await axios.get(
-          uriHelpers.concatUrl([envConstants.GIT_URI, 'repository', url])
-        )
-        claim = claim.data.content
-        package = package.data.content
-        repository = repository.data
-        break
-      default:
-        throw new Error('Unsupported endpoint')
-    }
-
-    logger.debug(JSON.stringify(claim))
-    logger.debug(JSON.stringify(package))
-    logger.debug(JSON.stringify(repository))
-
-    logger.debug(JSON.stringify(req.headers.identity))
-    const identity = JSON.parse(req.headers.identity)
-
-    const jsonClaim = yaml.load(claim)
-
-    const payload = {
-      claim: jsonClaim,
-      package: yaml.load(package),
-      repository: repository.base,
-      owner: identity.username,
-      createdAt: timeHelpers.currentTime()
-    }
-
-    if (jsonClaim.metadata.deploymentId) {
-      payload._id = jsonClaim.metadata.deploymentId
-    }
-
-    // save the doc
-    Deployment.findOneAndUpdate(
-      { repository: repository.base },
-      {
-        $set: payload
-      },
-      {
-        new: true,
-        upsert: true
-      }
-    )
-      .then(async (deployment) => {
-        await axios.post(
-          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
-          {
-            encoding: 'base64',
-            claim: stringHelpers.to64(claim),
-            package: stringHelpers.to64(package)
-          },
-          {
-            headers: {
-              'X-Deployment-Id': deployment._id
-            }
-          }
-        )
-        res.status(200).json(deployment)
-      })
-      .catch((err) => {
-        next(err)
-      })
-  } catch (error) {
     next(error)
   }
 })
