@@ -6,7 +6,6 @@ module.exports = {
   ENDPOINT_URI: process.env.ENDPOINT_URI,
   GIT_URI: process.env.GIT_URI,
   ARGOCD_URI: process.env.ARGOCD_URI,
-  BRIDGE_URI: process.env.BRIDGE_URI,
   KUBERNETES_URI: process.env.KUBERNETES_URI,
   KEPTN_URI: process.env.KEPTN_URI,
   CODEQUALITY_URI: process.env.CODEQUALITY_URI,

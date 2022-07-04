@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const axios = require('axios')
 const Mustache = require('mustache')
 const yaml = require('js-yaml')
+const k8s = require('@kubernetes/client-node')
 
 const Deployment = mongoose.model('Deployment')
 const timeHelpers = require('../helpers/time.helpers')
@@ -187,19 +188,41 @@ router.post(['/', '/import'], async (req, res, next) => {
       upsert: true
     })
       .then(async (deployment) => {
-        await axios.post(
-          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
-          {
-            encoding: 'base64',
-            claim: stringHelpers.to64(yaml.dump(payload.claim)),
-            package: stringHelpers.to64(yaml.dump(payload.package))
-          },
-          {
-            headers: {
-              'X-Deployment-Id': deployment._id
-            }
-          }
-        )
+        const kc = new k8s.KubeConfig()
+        kc.loadFromDefault()
+        const client = k8s.KubernetesObjectApi.makeApiClient(kc)
+
+        // apply the deployment to cluster
+        const validSpecs = [payload.claim, payload.package]
+        for (const spec of validSpecs) {
+          spec.metadata = spec.metadata || {}
+          spec.metadata.annotations = spec.metadata.annotations || {}
+          delete spec.metadata.annotations[
+            'kubectl.kubernetes.io/last-applied-configuration'
+          ]
+          spec.metadata.annotations[
+            'kubectl.kubernetes.io/last-applied-configuration'
+          ] = JSON.stringify(spec)
+          await client
+            .read(spec)
+            .then(async () => {
+              await client.patch(
+                spec,
+                {},
+                {},
+                {},
+                {},
+                {
+                  headers: {
+                    'content-type': 'application/merge-patch+json'
+                  }
+                }
+              )
+            })
+            .catch(async () => {
+              await client.create(spec)
+            })
+        }
         res.status(200).json(deployment)
       })
       .catch(async (err) => {

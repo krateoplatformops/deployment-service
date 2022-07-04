@@ -1,17 +1,13 @@
 const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
-const axios = require('axios')
-const yaml = require('js-yaml')
+const k8s = require('@kubernetes/client-node')
 
 const Deployment = mongoose.model('Deployment')
-const uriHelpers = require('../helpers/uri.helpers')
-const stringHelpers = require('../helpers/string.helpers')
-const { envConstants } = require('../constants')
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    Deployment.findByIdAndDelete(req.params.id, async (err, deployment) => {
+    Deployment.findById(req.params.id).exec(async (err, deployment) => {
       if (err) {
         next(err)
       } else if (!deployment) {
@@ -19,20 +15,16 @@ router.delete('/:id', async (req, res, next) => {
           message: `Deployment with id ${req.params.id} not found and cannot be deleted`
         })
       } else {
-        // call kube bridge
-        await axios.delete(
-          uriHelpers.concatUrl([envConstants.BRIDGE_URI, 'template']),
-          {
-            headers: {
-              'X-Deployment-Id': deployment._id
-            },
-            data: {
-              encoding: 'base64',
-              claim: stringHelpers.to64(yaml.dump(deployment.claim)),
-              package: stringHelpers.to64(yaml.dump(deployment.package))
-            }
-          }
-        )
+        // delete from k8s
+        const kc = new k8s.KubeConfig()
+        kc.loadFromDefault()
+        const client = k8s.KubernetesObjectApi.makeApiClient(kc)
+
+        const validSpecs = [deployment.claim, deployment.package]
+        for (const spec of validSpecs) {
+          await client.delete(spec)
+        }
+        await Deployment.findByIdAndDelete(req.params.id).exec()
         // response
         res
           .status(200)
