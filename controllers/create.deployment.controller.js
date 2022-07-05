@@ -173,9 +173,9 @@ router.post(['/', '/import'], async (req, res, next) => {
         createdAt: timeHelpers.currentTime()
       }
 
-      if (jsonClaim.metadata.deploymentId) {
-        payload._id = jsonClaim.metadata.deploymentId
-        deploymentId = jsonClaim.metadata.deploymentId
+      if (jsonClaim.metadata.labels.deploymentId) {
+        payload._id = jsonClaim.metadata.labels.deploymentId
+        deploymentId = jsonClaim.metadata.labels.deploymentId
       }
     }
 
