@@ -207,7 +207,7 @@ router.post(['/', '/import'], async (req, res, next) => {
       })
   } catch (error) {
     // console.log(error)
-    if (deploymentId) {
+    if (deploymentId && !importing) {
       await Deployment.findByIdAndDelete(deploymentId)
     }
     next(error)
