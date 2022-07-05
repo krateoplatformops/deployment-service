@@ -25,7 +25,9 @@ router.delete('/:id', async (req, res, next) => {
           .delete(deployment.claim)
           .then(() => {})
           .catch(() => {
-            logger.warn(`Could not delete ${spec.kind} ${spec.metadata.name}`)
+            logger.warn(
+              `Could not delete ${deployment.claim.kind} ${deployment.claim.metadata.name}`
+            )
           })
 
         await Deployment.findByIdAndDelete(req.params.id).exec()
