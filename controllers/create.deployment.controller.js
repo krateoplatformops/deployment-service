@@ -12,6 +12,7 @@ const uriHelpers = require('../helpers/uri.helpers')
 const stringHelpers = require('../helpers/string.helpers')
 const { logger } = require('../helpers/logger.helpers')
 const { envConstants } = require('../constants')
+const k8sHelpers = require('../helpers/k8s.helpers')
 
 router.post(['/', '/import'], async (req, res, next) => {
   let doc = null
@@ -193,45 +194,19 @@ router.post(['/', '/import'], async (req, res, next) => {
         const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
         // apply the deployment to cluster
-        const validSpecs = [payload.claim, payload.package]
-        for (const spec of validSpecs) {
-          spec.metadata = spec.metadata || {}
-          spec.metadata.annotations = spec.metadata.annotations || {}
-          delete spec.metadata.annotations[
-            'kubectl.kubernetes.io/last-applied-configuration'
-          ]
-          spec.metadata.annotations[
-            'kubectl.kubernetes.io/last-applied-configuration'
-          ] = JSON.stringify(spec)
-          await client
-            .read(spec)
-            .then(async () => {
-              await client.patch(
-                spec,
-                {},
-                {},
-                {},
-                {},
-                {
-                  headers: {
-                    'content-type': 'application/merge-patch+json'
-                  }
-                }
-              )
-            })
-            .catch(async () => {
-              await client.create(spec)
-            })
-        }
+        await k8sHelpers.create(client, payload.package)
+        await k8sHelpers.wait(client, payload.package)
+        await k8sHelpers.create(client, payload.claim)
+
         res.status(200).json(deployment)
       })
       .catch(async (err) => {
-        console.log(err)
+        // console.log(err)
         await Deployment.findByIdAndDelete(deploymentId)
         next(err)
       })
   } catch (error) {
-    console.log(error)
+    // console.log(error)
     if (deploymentId) {
       await Deployment.findByIdAndDelete(deploymentId)
     }

@@ -6,3 +6,4 @@ test.js
 assets/*
 *.txt
 local.js
+spec.json

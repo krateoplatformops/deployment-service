@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
 const k8s = require('@kubernetes/client-node')
+const { logger } = require('../helpers/logger.helpers')
 
 const Deployment = mongoose.model('Deployment')
 
@@ -20,10 +21,13 @@ router.delete('/:id', async (req, res, next) => {
         kc.loadFromDefault()
         const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
-        const validSpecs = [deployment.claim, deployment.package]
-        for (const spec of validSpecs) {
-          await client.delete(spec)
-        }
+        await client
+          .delete(deployment.claim)
+          .then(() => {})
+          .catch(() => {
+            logger.warn(`Could not delete ${spec.kind} ${spec.metadata.name}`)
+          })
+
         await Deployment.findByIdAndDelete(req.params.id).exec()
         // response
         res
