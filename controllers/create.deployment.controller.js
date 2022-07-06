@@ -46,7 +46,6 @@ router.post(['/', '/import'], async (req, res, next) => {
       // create empty doc if new deployment
       doc = await Deployment.create({
         claim: {},
-        package: {},
         owner: identity.username,
         templateRepository: template.url,
         createdAt: timeHelpers.currentTime(),
@@ -83,7 +82,6 @@ router.post(['/', '/import'], async (req, res, next) => {
     }
 
     let claim = null
-    let package = null
     let repository = null
 
     // get files
@@ -94,15 +92,6 @@ router.post(['/', '/import'], async (req, res, next) => {
         url,
         endpointData,
         stringHelpers.to64(`${repoFolder}claim.yaml`)
-      ])
-    )
-    package = await axios.get(
-      uriHelpers.concatUrl([
-        envConstants.GIT_URI,
-        'file',
-        url,
-        endpointData,
-        stringHelpers.to64(`${repoFolder}package.yaml`)
       ])
     )
 
@@ -134,7 +123,6 @@ router.post(['/', '/import'], async (req, res, next) => {
     }
 
     logger.debug(JSON.stringify(claim.data))
-    logger.debug(JSON.stringify(package.data))
     logger.debug(JSON.stringify(repository))
 
     if (!importing) {
@@ -152,22 +140,19 @@ router.post(['/', '/import'], async (req, res, next) => {
         return text
       }
       claim = Mustache.render(claim.data.content, placeholder)
-      package = Mustache.render(package.data.content, placeholder)
 
       claim = yaml.load(claim)
       claim.spec._values = JSON.stringify(placeholder)
 
-      payload = { claim, package: yaml.load(package), repository }
+      payload = { claim, repository }
     } else {
       claim = claim.data.content
-      package = package.data.content
 
       const jsonClaim = yaml.load(claim)
 
       payload = {
         claim: jsonClaim,
         endpointName,
-        package: yaml.load(package),
         repository,
         owner: identity.username,
         createdAt: timeHelpers.currentTime()
@@ -194,8 +179,8 @@ router.post(['/', '/import'], async (req, res, next) => {
         const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
         // apply the deployment to cluster
-        await k8sHelpers.create(client, payload.package)
-        await k8sHelpers.wait(client, payload.package)
+        // await k8sHelpers.create(client, payload.package)
+        // await k8sHelpers.wait(client, payload.package)
         await k8sHelpers.create(client, payload.claim)
 
         res.status(200).json(deployment)

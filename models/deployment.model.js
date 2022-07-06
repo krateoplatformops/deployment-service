@@ -9,11 +9,6 @@ const deploymentSchema = new Schema({
     required: true,
     default: {}
   },
-  package: {
-    type: Object,
-    required: true,
-    default: {}
-  },
   owner: {
     type: String,
     required: true
