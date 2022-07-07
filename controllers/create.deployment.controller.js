@@ -186,8 +186,8 @@ router.post(['/', '/import'], async (req, res, next) => {
         // websocket
         await axios.post(envConstants.SOCKET_URI, {
           message: importing
-            ? 'Deployment imported successfully'
-            : 'New deployment created',
+            ? `Deployment imported successfully: ${deployment.claim.metadata.name}`
+            : `New deployment created: ${deployment.claim.metadata.name}`,
           ref: {
             deploymentId: deployment._id
           }
