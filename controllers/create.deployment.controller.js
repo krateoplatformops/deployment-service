@@ -183,15 +183,25 @@ router.post(['/', '/import'], async (req, res, next) => {
         // await k8sHelpers.wait(client, payload.package)
         await k8sHelpers.create(client, payload.claim)
 
+        // websocket
+        await axios.post(envConstants.SOCKET_URI, {
+          message: importing
+            ? 'Deployment imported successfully'
+            : 'New deployment created',
+          ref: {
+            deploymentId: deployment._id
+          }
+        })
+
         res.status(200).json(deployment)
       })
       .catch(async (err) => {
-        // console.log(err)
+        console.log(err)
         await Deployment.findByIdAndDelete(deploymentId)
         next(err)
       })
   } catch (error) {
-    // console.log(error)
+    console.log(error)
     if (deploymentId && !importing) {
       await Deployment.findByIdAndDelete(deploymentId)
     }
