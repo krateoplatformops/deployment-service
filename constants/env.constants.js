@@ -9,5 +9,6 @@ module.exports = {
   KUBERNETES_URI: process.env.KUBERNETES_URI,
   KEPTN_URI: process.env.KEPTN_URI,
   CODEQUALITY_URI: process.env.CODEQUALITY_URI,
-  PIPELINE_URI: process.env.PIPELINE_URI
+  PIPELINE_URI: process.env.PIPELINE_URI,
+  SOCKET_URI: process.env.SOCKET_URI
 }
