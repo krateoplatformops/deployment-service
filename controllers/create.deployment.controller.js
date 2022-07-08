@@ -13,6 +13,7 @@ const stringHelpers = require('../helpers/string.helpers')
 const { logger } = require('../helpers/logger.helpers')
 const { envConstants } = require('../constants')
 const k8sHelpers = require('../helpers/k8s.helpers')
+const packageJson = require('../package.json')
 
 router.post(['/', '/import'], async (req, res, next) => {
   let doc = null
@@ -188,7 +189,10 @@ router.post(['/', '/import'], async (req, res, next) => {
           message: importing
             ? `Deployment imported successfully: ${deployment.claim.metadata.name}`
             : `New deployment created: ${deployment.claim.metadata.name}`,
-            deploymentId: deployment._id
+          deploymentId: deployment._id,
+          source: packageJson.name,
+          level: 'info',
+          reason: 'new'
         })
 
         res.status(200).json(deployment)
