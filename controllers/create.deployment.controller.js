@@ -188,9 +188,7 @@ router.post(['/', '/import'], async (req, res, next) => {
           message: importing
             ? `Deployment imported successfully: ${deployment.claim.metadata.name}`
             : `New deployment created: ${deployment.claim.metadata.name}`,
-          ref: {
             deploymentId: deployment._id
-          }
         })
 
         res.status(200).json(deployment)
