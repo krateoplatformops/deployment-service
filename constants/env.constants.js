@@ -10,5 +10,6 @@ module.exports = {
   KEPTN_URI: process.env.KEPTN_URI,
   CODEQUALITY_URI: process.env.CODEQUALITY_URI,
   PIPELINE_URI: process.env.PIPELINE_URI,
-  SOCKET_URI: process.env.SOCKET_URI
+  SOCKET_URI: process.env.SOCKET_URI,
+  CAPI_URI: process.env.CAPI_URI
 }

@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
 const axios = require('axios')
+const yaml = require('js-yaml')
 
 const uriHelpers = require('../helpers/uri.helpers')
 const stringHelpers = require('../helpers/string.helpers')
@@ -161,6 +162,14 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
             ])
           )
         ).data
+        break
+      case 'capi':
+        content = (
+          await axios.get(
+            uriHelpers.concatUrl([envConstants.CAPI_URI, req.params.id])
+          )
+        ).data
+        content.content = yaml.load(stringHelpers.b64toAscii(content.content))
         break
       default:
         throw new Error(`Unsupported plugin type: ${req.params.plugin}`)
