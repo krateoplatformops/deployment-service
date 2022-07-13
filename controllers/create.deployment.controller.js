@@ -185,8 +185,10 @@ router.post(['/', '/import'], async (req, res, next) => {
         await k8sHelpers.create(client, payload.claim)
 
         // websocket
-        await axios.post(envConstants.SOCKET_URI, {
-          message: importing
+        try {
+
+          await axios.post(envConstants.SOCKET_URI, {
+            message: importing
             ? `Deployment imported successfully: ${deployment.claim.metadata.name}`
             : `New deployment created: ${deployment.claim.metadata.name}`,
           deploymentId: deployment._id,
@@ -194,6 +196,9 @@ router.post(['/', '/import'], async (req, res, next) => {
           level: 'info',
           reason: 'new'
         })
+      } catch {
+  logger.debug('Cannot connect to socket-service')        
+      }
 
         res.status(200).json(deployment)
       })
