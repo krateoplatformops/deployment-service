@@ -99,8 +99,8 @@ router.post(['/', '/import'], async (req, res, next) => {
     // get endpoint
     const ep = uriHelpers.parse(endpoint.target)
 
-    if (req.body.repository) {
-      repository = req.body.repository
+    if (req.body.metadata.repository) {
+      repository = req.body.metadata.repository
     } else {
       if (!importing) {
         switch (endpoint?.type) {
