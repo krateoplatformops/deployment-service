@@ -99,28 +99,32 @@ router.post(['/', '/import'], async (req, res, next) => {
     // get endpoint
     const ep = uriHelpers.parse(endpoint.target)
 
-    if (!importing) {
-      switch (endpoint?.type) {
-        case 'github':
-          repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
-          break
-        case 'bitbucket':
-          repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
-          break
-        default:
-          throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
-      }
+    if (req.body.repository) {
+      repository = req.body.repository
     } else {
-      repository = (
-        await axios.get(
-          uriHelpers.concatUrl([
-            envConstants.GIT_URI,
-            'repository',
-            endpointData,
-            url
-          ])
-        )
-      ).data.base
+      if (!importing) {
+        switch (endpoint?.type) {
+          case 'github':
+            repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
+            break
+          case 'bitbucket':
+            repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
+            break
+          default:
+            throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
+        }
+      } else {
+        repository = (
+          await axios.get(
+            uriHelpers.concatUrl([
+              envConstants.GIT_URI,
+              'repository',
+              endpointData,
+              url
+            ])
+          )
+        ).data.base
+      }
     }
 
     logger.debug(JSON.stringify(claim.data))
@@ -186,19 +190,18 @@ router.post(['/', '/import'], async (req, res, next) => {
 
         // websocket
         try {
-
           await axios.post(envConstants.SOCKET_URI, {
             message: importing
-            ? `Deployment imported successfully: ${deployment.claim.metadata.name}`
-            : `New deployment created: ${deployment.claim.metadata.name}`,
-          deploymentId: deployment._id,
-          source: packageJson.name,
-          level: 'info',
-          reason: 'new'
-        })
-      } catch {
-  logger.debug('Cannot connect to socket-service')        
-      }
+              ? `Deployment imported successfully: ${deployment.claim.metadata.name}`
+              : `New deployment created: ${deployment.claim.metadata.name}`,
+            deploymentId: deployment._id,
+            source: packageJson.name,
+            level: 'info',
+            reason: 'new'
+          })
+        } catch {
+          logger.debug('Cannot connect to socket-service')
+        }
 
         res.status(200).json(deployment)
       })
