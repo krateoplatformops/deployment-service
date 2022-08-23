@@ -147,7 +147,7 @@ router.all('/:id/plugins/:plugin/:name', async (req, res, next) => {
               req.method === 'GET' ? 'project' : 'trigger',
               endpointData,
               stringHelpers.to64(plugin.value)
-            ]),
+            ]) + `?identity=${req.query.identity}`,
             data: req.body
           })
         ).data
