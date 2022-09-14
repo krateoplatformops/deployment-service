@@ -1,222 +1,372 @@
 const express = require('express')
 const router = express.Router()
-const mongoose = require('mongoose')
 const axios = require('axios')
 const Mustache = require('mustache')
 const yaml = require('js-yaml')
 const k8s = require('@kubernetes/client-node')
 
-const Deployment = mongoose.model('Deployment')
-const timeHelpers = require('../helpers/time.helpers')
-const uriHelpers = require('../helpers/uri.helpers')
-const stringHelpers = require('../helpers/string.helpers')
-const { logger } = require('../helpers/logger.helpers')
-const { envConstants } = require('../constants')
-const k8sHelpers = require('../helpers/k8s.helpers')
-const packageJson = require('../package.json')
+const uriHelpers = require('../service-library/helpers/uri.helpers')
+const stringHelpers = require('../service-library/helpers/string.helpers')
+const { logger } = require('../service-library/helpers/logger.helpers')
+const { envConstants } = require('../service-library/constants')
+const k8sHelpers = require('../service-library/helpers/k8s.helpers')
 
-router.post(['/', '/import'], async (req, res, next) => {
-  let doc = null
-  let importing = false
-
-  if (req.path === '/import') {
-    importing = true
-  }
-
-  let deploymentId = null
+router.post('/', async (req, res, next) => {
   try {
-    let template = null
-    let parsed = null
-    let url = null
-    let endpointName = null
-    let repoFolder = ''
-    let payload = null
+    const { templateId, metadata } = req.body
 
-    const identity = JSON.parse(req.headers.identity)
-
-    if (!importing) {
-      const templateUrl = uriHelpers.concatUrl([
-        envConstants.TEMPLATE_URI,
-        req.body.templateId
-      ])
-      template = (await axios.get(templateUrl)).data
-      parsed = uriHelpers.parse(template.url)
-
-      endpointName = template.endpointName
-
-      // create empty doc if new deployment
-      doc = await Deployment.create({
-        claim: {},
-        owner: identity.username,
-        templateRepository: template.url,
-        createdAt: timeHelpers.currentTime(),
-        repository: 'repository',
-        endpointName
-      })
-      deploymentId = doc._id
-      url = stringHelpers.to64(template.url)
-      repoFolder = 'defaults/'
-    } else {
-      url = stringHelpers.to64(req.body.url)
-      endpointName = req.body.endpointName
-    }
-
-    // get endpoint settings
-    const endpointUrl = uriHelpers.concatUrl([
-      envConstants.ENDPOINT_URI,
-      'name',
-      endpointName
-    ])
-    const endpoint = (await axios.get(endpointUrl)).data
-
-    const endpointData = stringHelpers.to64(
-      JSON.stringify({
-        target: endpoint.target,
-        secret: endpoint.secret,
-        type: endpoint.type
-      })
+    const t = await axios.get(
+      uriHelpers.concatUrl([envConstants.TEMPLATE_URI, 'uid', templateId])
     )
-    logger.debug(JSON.stringify(endpoint))
 
-    if (!endpoint) {
-      throw new Error('Unsupported domain')
-    }
+    const tUrl = t.data.spec.url
+    const parsed = uriHelpers.parse(tUrl)
+    const endpointName = t.data.spec.endpointName
 
-    let claim = null
-    let repository = null
-
-    // get files
-    claim = await axios.get(
+    const claimContent = await axios.get(
       uriHelpers.concatUrl([
         envConstants.GIT_URI,
-        'file',
-        url,
-        endpointData,
-        stringHelpers.to64(`${repoFolder}claim.yaml`)
+        endpointName,
+        `[${parsed.pathList[0]}][${parsed.pathList[1]}]${encodeURIComponent(
+          'defaults/claim.yaml'
+        )}`
       ])
     )
 
-    // get endpoint
-    const ep = uriHelpers.parse(endpoint.target)
+    const claimString = stringHelpers.b64toAscii(
+      claimContent.data.list[0].content
+    )
 
-    if (req.body.metadata?.repository) {
-      repository = req.body.metadata.repository
-    } else {
-      if (!importing) {
-        switch (endpoint?.type) {
-          case 'github':
-            repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
-            break
-          case 'bitbucket':
-            repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
-            break
-          default:
-            throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
-        }
-      } else {
-        repository = (
-          await axios.get(
-            uriHelpers.concatUrl([
-              envConstants.GIT_URI,
-              'repository',
-              endpointData,
-              url
-            ])
-          )
-        ).data.base
-      }
+    // placeholders
+    const placeholder = {
+      ...metadata
     }
 
-    logger.debug(JSON.stringify(claim.data))
-    logger.debug(JSON.stringify(repository))
+    logger.debug(placeholder)
 
-    if (!importing) {
-      // placeholders
-      const placeholder = {
-        ...req.body.metadata,
-        owner: identity.username,
-        domain: parsed.domain,
-        schema: parsed.schema,
-        apiUrl: endpoint.target,
-        deploymentId: doc._id
-      }
-
-      Mustache.escape = (text) => {
-        return text
-      }
-      claim = Mustache.render(claim.data.content, placeholder)
-
-      claim = yaml.load(claim)
-      claim.spec._values = JSON.stringify(placeholder)
-
-      payload = { claim, repository }
-    } else {
-      claim = claim.data.content
-
-      const jsonClaim = yaml.load(claim)
-
-      payload = {
-        claim: jsonClaim,
-        endpointName,
-        repository,
-        owner: identity.username,
-        createdAt: timeHelpers.currentTime()
-      }
-
-      if (jsonClaim.metadata.labels.deploymentId) {
-        payload._id = jsonClaim.metadata.labels.deploymentId
-        deploymentId = jsonClaim.metadata.labels.deploymentId
-      }
+    Mustache.escape = (text) => {
+      return text
     }
+    const claim = yaml.load(Mustache.render(claimString, placeholder))
 
-    if (!deploymentId) {
-      throw new Error('Deployment ID not found')
-    }
+    const kc = new k8s.KubeConfig()
+    kc.loadFromDefault()
+    const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
-    // save the doc
-    Deployment.findByIdAndUpdate(deploymentId, payload, {
-      new: true,
-      upsert: true
-    })
-      .then(async (deployment) => {
-        const kc = new k8s.KubeConfig()
-        kc.loadFromDefault()
-        const client = k8s.KubernetesObjectApi.makeApiClient(kc)
+    const doc = await k8sHelpers.create(client, claim)
 
-        // apply the deployment to cluster
-        // await k8sHelpers.create(client, payload.package)
-        // await k8sHelpers.wait(client, payload.package)
-        await k8sHelpers.create(client, payload.claim)
-
-        // websocket
-        try {
-          await axios.post(envConstants.SOCKET_URI, {
-            message: importing
-              ? `Deployment imported successfully: ${deployment.claim.metadata.name}`
-              : `New deployment created: ${deployment.claim.metadata.name}`,
-            deploymentId: deployment._id,
-            source: packageJson.name,
-            level: 'info',
-            reason: 'new'
-          })
-        } catch {
-          logger.debug('Cannot connect to socket-service')
-        }
-
-        res.status(200).json(deployment)
-      })
-      .catch(async (err) => {
-        console.log(err)
-        await Deployment.findByIdAndDelete(deploymentId)
-        next(err)
-      })
+    res.status(doc.statusCode || 200).json(doc)
   } catch (error) {
-    console.log(error)
-    if (deploymentId && !importing) {
-      await Deployment.findByIdAndDelete(deploymentId)
-    }
     next(error)
   }
 })
+
+// router.post('/', async (req, res, next) => {
+//   let deploymentId = null
+//   let claim = null
+//   let doc = null
+//   let importing = false
+//   let payload = null
+
+//   try {
+//     if (req.body.url) {
+//       importing = true
+
+//       const { pathList } = uriHelpers.parse(req.body.url)
+
+//       const claimPayload = {
+//         ...req.body,
+//         org: pathList[0],
+//         repo: pathList[1],
+//         fileName: pathList[pathList.length - 1]
+//       }
+
+//       // get claim
+//       const claimContent = await gitHelpers.getFile(claimPayload)
+//       if (!claimContent) {
+//         return res.status(404).send({ message: 'File not found' })
+//       }
+//       logger.debug(claimContent)
+//       claim = yaml.load(claimContent)
+
+//       payload = {
+//         ...deploymentHelpers.basePayload(req.body),
+//         claim
+//       }
+
+//       if (claim.metadata?.labels?.deploymentId) {
+//         deploymentId = claim.metadata.labels.deploymentId
+//       } else {
+//         doc = await deploymentHelpers.createEmptyDoc(req.body)
+//         deploymentId = doc._id.toString()
+//         payload.claim = {
+//           ...payload.claim,
+//           metadata: {
+//             ...payload.claim.metadata,
+//             labels: {
+//               ...payload.claim.metadata.labels,
+//               deploymentId: doc._id.toString()
+//             }
+//           }
+//         }
+//       }
+//     } else {
+//       // get template
+//       const template = await templateHelpers.getTemplate(req.body.templateId)
+//       if (!template) {
+//         return res.status(404).send({ message: 'Template not found' })
+//       }
+
+//       // get claim
+//       const claim = await gitHelpers.getFile({
+//         endpointName: template.endpointName,
+//         org: template.organizationName,
+//         repo: template.repositoryName,
+//         fileName: 'defaults/claim.yaml'
+//       })
+
+//       const endpoint = await endpointHelpers.
+
+//       // set url
+//       let url = null
+//       switch (endpoint.metadata.type) {
+//         case 'github':
+//           url = `https://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
+//           break
+//         case 'bitbucket':
+//           url = `https://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
+//           break
+//         default:
+//           throw new Error(`Unsupported endpoint type ${endpoint.metadata.type}`)
+//       }
+
+//       // empty doc
+//       doc = await deploymentHelpers.createEmptyDoc({
+//         endpointName: template.endpointName,
+//         url
+//       })
+
+//       deploymentId = doc._id.toString()
+//       const identity = res.locals.identity
+//       const parsed = uriHelpers.parse(template.target)
+
+//       // placeholders
+//       const placeholder = {
+//         ...req.body.metadata,
+//         owner: identity.username,
+//         domain: parsed.domain,
+//         schema: parsed.schema,
+//         apiUrl: endpoint.target,
+//         deploymentId
+//       }
+//       Mustache.escape = (text) => {
+//         return text
+//       }
+//       claim = Mustache.render(claim, placeholder)
+//       claim = yaml.load(claim)
+
+//       return res.status(200).json(claim)
+
+//       // // set repository url
+//       // switch (endpoint.metadata.type) {
+//       //   case 'github':
+//       //     repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
+//       //     break
+//       //   case 'bitbucket':
+//       //     repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
+//       //     break
+//       //   default:
+//       //     throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
+//       // }
+
+//       return res.status(200).json({ message: 'dev' })
+//     }
+
+//     // return res.status(200).json({ message: 'dev' })
+
+//     // create empty doc if no deploymentId
+//     // if (!deploymentId) {
+//     //   doc = await Deployment.create({
+//     //     claim: {},
+//     //     owner: identity.username,
+//     //     templateRepository: template.url,
+//     //     createdAt: timeHelpers.currentTime(),
+//     //     repository: 'repository',
+//     //     endpointName
+//     //   })
+//     // }
+
+//     // let doc = null
+//     // let importing = false
+//     // if (req.path === '/import') {
+//     //   importing = true
+//     // }
+//     // let deploymentId = null
+//     //   let template = null
+//     //   let parsed = null
+//     //   let url = null
+//     //   let endpointName = null
+//     //   let repoFolder = ''
+//     //   let payload = null
+//     //   const identity = JSON.parse(req.headers.identity)
+//     //   if (!importing) {
+//     //     const templateUrl = uriHelpers.concatUrl([
+//     //       envConstants.TEMPLATE_URI,
+//     //       req.body.templateId
+//     //     ])
+//     //     template = (await axios.get(templateUrl)).data
+//     //     parsed = uriHelpers.parse(template.url)
+//     //     endpointName = template.endpointName
+//     //     // create empty doc if new deployment
+//     //     doc = await Deployment.create({
+//     //       claim: {},
+//     //       owner: identity.username,
+//     //       templateRepository: template.url,
+//     //       createdAt: timeHelpers.currentTime(),
+//     //       repository: 'repository',
+//     //       endpointName
+//     //     })
+//     //     deploymentId = doc._id
+//     //     url = stringHelpers.to64(template.url)
+//     //     repoFolder = 'defaults/'
+//     //   } else {
+//     //     url = stringHelpers.to64(req.body.url)
+//     //     endpointName = req.body.endpointName
+//     //   }
+//     //   // get endpoint settings
+//     //   const endpointUrl = uriHelpers.concatUrl([
+//     //     envConstants.ENDPOINT_URI,
+//     //     'name',
+//     //     endpointName
+//     //   ])
+//     //   const endpoint = (await axios.get(endpointUrl)).data
+//     //   const endpointData = stringHelpers.to64(
+//     //     JSON.stringify({
+//     //       target: endpoint.target,
+//     //       secret: endpoint.secret,
+//     //       type: endpoint.type
+//     //     })
+//     //   )
+//     //   logger.debug(JSON.stringify(endpoint))
+//     //   if (!endpoint) {
+//     //     throw new Error('Unsupported domain')
+//     //   }
+//     //   let claim = null
+//     //   let repository = null
+//     //   // get files
+//     //   claim = await axios.get(
+//     //     uriHelpers.concatUrl([
+//     //       envConstants.GIT_URI,
+//     //       'file',
+//     //       url,
+//     //       endpointData,
+//     //       stringHelpers.to64(`${repoFolder}claim.yaml`)
+//     //     ])
+//     //   )
+//     //   // get endpoint
+//     //   const ep = uriHelpers.parse(endpoint.target)
+//     //   if (req.body.metadata?.repository) {
+//     //     repository = req.body.metadata.repository
+//     //   } else {
+//     //     if (!importing) {
+//     //       switch (endpoint?.type) {
+//     //         case 'github':
+//     //           repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.organizationName}/${req.body.metadata.repositoryName}`
+//     //           break
+//     //         case 'bitbucket':
+//     //           repository = `${ep.schema}://${req.body.metadata.provider}/${req.body.metadata.projectName}/${req.body.metadata.repositoryName}`
+//     //           break
+//     //         default:
+//     //           throw new Error(`Unsupported endpoint type ${endpoint?.type}`)
+//     //       }
+//     //     } else {
+//     //       repository = (
+//     //         await axios.get(
+//     //           uriHelpers.concatUrl([
+//     //             envConstants.GIT_URI,
+//     //             'repository',
+//     //             endpointData,
+//     //             url
+//     //           ])
+//     //         )
+//     //       ).data.base
+//     //     }
+//     //   }
+//     //   logger.debug(JSON.stringify(claim.data))
+//     //   logger.debug(JSON.stringify(repository))
+//     //   if (!importing) {
+//     //     // placeholders
+//     //     const placeholder = {
+//     //       ...req.body.metadata,
+//     //       owner: identity.username,
+//     //       domain: parsed.domain,
+//     //       schema: parsed.schema,
+//     //       apiUrl: endpoint.target,
+//     //       deploymentId: doc._id
+//     //     }
+//     //     Mustache.escape = (text) => {
+//     //       return text
+//     //     }
+//     //     claim = Mustache.render(claim.data.content, placeholder)
+//     //     claim = yaml.load(claim)
+//     //     claim.spec._values = JSON.stringify(placeholder)
+//     //     payload = { claim, repository }
+//     //   } else {
+//     //     claim = claim.data.content
+//     //     const jsonClaim = yaml.load(claim)
+//     //     payload = {
+//     //       claim: jsonClaim,
+//     //       endpointName,
+//     //       repository,
+//     //       owner: identity.username,
+//     //       createdAt: timeHelpers.currentTime()
+//     //     }
+//     //     if (jsonClaim.metadata.labels.deploymentId) {
+//     //       payload._id = jsonClaim.metadata.labels.deploymentId
+//     //       deploymentId = jsonClaim.metadata.labels.deploymentId
+//     //     }
+//     //   }
+//     //   if (!deploymentId) {
+//     //     throw new Error('Deployment ID not found')
+//     //   }
+//     // save the doc
+//     console.log(deploymentId)
+//     Deployment.findByIdAndUpdate(deploymentId, payload, {
+//       new: true,
+//       upsert: true
+//     })
+//       .then(async (deployment) => {
+//         const kc = new k8s.KubeConfig()
+//         kc.loadFromDefault()
+//         const client = k8s.KubernetesObjectApi.makeApiClient(kc)
+//         // apply the deployment to cluster
+//         await k8sHelpers.create(client, payload.claim)
+//         // notification service
+//         try {
+//           await axios.post(envConstants.NOTIFICATION_URI, {
+//             message: importing
+//               ? `Deployment imported successfully: ${deployment.claim.metadata.name}`
+//               : `New deployment created: ${deployment.claim.metadata.name}`,
+//             deploymentId: deployment._id,
+//             source: packageJson.name,
+//             level: 'info',
+//             reason: 'new'
+//           })
+//         } catch {
+//           logger.debug('Cannot connect to socket-service')
+//         }
+//         res.status(200).json(deployment)
+//       })
+//       .catch(async (err) => {
+//         await Deployment.findByIdAndDelete(deploymentId)
+//         next(err)
+//       })
+//   } catch (error) {
+//     if (deploymentId && !importing) {
+//       await Deployment.findByIdAndDelete(deploymentId)
+//     }
+//     next(error)
+//   }
+// })
 
 module.exports = router

@@ -3,13 +3,17 @@ name: Build stable Docker image (tags)
 on:
   push:
     tags:
-      - "*"
+      - '*'
 
 jobs:
   build:
     name: Create docker image
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - name: Get tag
         id: tag
         uses: dawidd6/action-get-tag@v1
@@ -39,7 +43,7 @@ jobs:
           tags: ghcr.io/krateoplatformops/${{ github.event.repository.name }}:${{steps.tag.outputs.tag}}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
-          build-args: "VERSION=${{ steps.tag.outputs.tag }}"
+          build-args: 'VERSION=${{ steps.tag.outputs.tag }}'
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
 
@@ -50,6 +54,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - name: Set tag
         run: echo "::set-output name=VERSION_TAG::$(git describe --dirty --always --tags | sed 's/-/./2' | sed 's/-/./2' )"
         id: tagger
@@ -68,6 +74,7 @@ jobs:
         uses: indiesdev/curl@v1.1
         with:
           url: ${{ secrets.WEBHOOK_URL }}
-          method: "POST"
+          method: 'POST'
+          timeout: 5000
           headers: '{ "x-token": "${{ secrets.WEBHOOK_TOKEN }}" }'
           body: '{ "project": "${{ github.event.repository.name }}", "tag": "${{ steps.tagger.outputs.VERSION_TAG }}" }'
