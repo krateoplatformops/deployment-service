@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const k8sHelpers = require('../service-library/helpers/k8s.helpers')
-const { k8sConstants } = require('../../service-library/constants')
+const { k8sConstants } = require('../service-library/constants')
 // const k8s = require('@kubernetes/client-node')
 // const request = require('request')
 
