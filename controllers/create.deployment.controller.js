@@ -7,9 +7,10 @@ const k8s = require('@kubernetes/client-node')
 
 const uriHelpers = require('../service-library/helpers/uri.helpers')
 const stringHelpers = require('../service-library/helpers/string.helpers')
-const { logger } = require('../service-library/helpers/logger.helpers')
+const logger = require('../service-library/helpers/logger.helpers')
 const { envConstants } = require('../service-library/constants')
 const k8sHelpers = require('../service-library/helpers/k8s.helpers')
+const responseHelpers = require('../service-library/helpers/response.helpers')
 
 router.post('/', async (req, res, next) => {
   try {
@@ -28,7 +29,7 @@ router.post('/', async (req, res, next) => {
         envConstants.GIT_URI,
         endpointName,
         `[${parsed.pathList[0]}][${parsed.pathList[1]}]${encodeURIComponent(
-          'defaults/claim.yaml'
+          'deployment.yaml'
         )}`
       ])
     )
@@ -37,9 +38,47 @@ router.post('/', async (req, res, next) => {
       claimContent.data.list[0].content
     )
 
+    const endpointData = (
+      await axios.get(
+        uriHelpers.concatUrl([
+          envConstants.SECRET_URI,
+          'endpoint',
+          endpointName
+        ])
+      )
+    ).data
+
+    // endpoint target
+    let targetEndpointData = endpointData
+    if (metadata.endpointName === endpointName) {
+      targetEndpointData = (
+        await axios.get(
+          uriHelpers.concatUrl([
+            envConstants.SECRET_URI,
+            'endpoint',
+            metadata.endpointName
+          ])
+        )
+      ).data
+    }
+    const targetParsed = uriHelpers.parse(targetEndpointData.target)
+
     // placeholders
+    const fromT = t.data.spec
     const placeholder = {
-      ...metadata
+      ...metadata,
+      fromRepoDomain: endpointData.domain,
+      fromRepoEndpointName: fromT.endpointName,
+      fromRepoApiUrl: endpointData.target,
+      fromRepoRepositoryName: parsed.pathList[1],
+      fromRepoOrganizationName: parsed.pathList[0],
+      fromRepoSchema: parsed.schema,
+      toRepoDomain: targetEndpointData.domain,
+      toRepoEndpointName: metadata.endpointName,
+      toRepoApiUrl: targetEndpointData.target,
+      toRepoRepositoryName: metadata.repositoryName,
+      toRepoOrganizationName: metadata.organizationName,
+      toRepoSchema: targetParsed.schema
     }
 
     logger.debug(placeholder)
@@ -49,13 +88,23 @@ router.post('/', async (req, res, next) => {
     }
     const claim = yaml.load(Mustache.render(claimString, placeholder))
 
+    claim.spec.values = placeholder
+
     const kc = new k8s.KubeConfig()
     kc.loadFromDefault()
     const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
     const doc = await k8sHelpers.create(client, claim)
 
-    res.status(doc.statusCode || 200).json(doc)
+    console.log(doc)
+
+    if (doc.statusCode && doc.statusCode !== 200) {
+      return res.status(doc.statusCode).json({ message: doc.body.message })
+    } else if (doc instanceof Error) {
+      return res.status(500).json({ message: doc.message })
+    }
+
+    res.status(doc.statusCode || 200).json(responseHelpers.parse(doc))
   } catch (error) {
     next(error)
   }
