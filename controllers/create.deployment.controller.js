@@ -20,6 +20,29 @@ router.post('/', async (req, res, next) => {
       uriHelpers.concatUrl([envConstants.TEMPLATE_URI, 'uid', templateId])
     )
 
+    // find fields with type = endpoint
+    const endpoints = t.data.spec.widgets
+      .map((w) =>
+        w.properties.filter((f) => f.type?.toLowerCase() === 'endpoint')
+      )
+      .flat()
+
+    const endpointValues = await Promise.all(
+      endpoints.map(async (e) => {
+        return {
+          [e.key]: (
+            await axios.get(
+              uriHelpers.concatUrl([
+                envConstants.SECRET_URI,
+                'endpoint',
+                req.body.metadata[e.key]
+              ])
+            )
+          ).data
+        }
+      })
+    )
+
     const tUrl = t.data.spec.url
     const parsed = uriHelpers.parse(tUrl)
     const endpointName = t.data.spec.endpointName
@@ -28,75 +51,45 @@ router.post('/', async (req, res, next) => {
       uriHelpers.concatUrl([
         envConstants.GIT_URI,
         endpointName,
-        `[${parsed.pathList[0]}][${parsed.pathList[1]}]${encodeURIComponent(
-          'deployment.yaml'
-        )}`
+        `[${parsed.pathList[0]}][${parsed.pathList[1]}]deployment.yaml`
       ])
     )
+
+    Mustache.escape = (text) => {
+      return text
+    }
+
+    // console.log(endpointValues)
 
     const claimString = stringHelpers.b64toAscii(
       claimContent.data.list[0].content
     )
 
-    const endpointData = (
-      await axios.get(
-        uriHelpers.concatUrl([
-          envConstants.SECRET_URI,
-          'endpoint',
-          endpointName
-        ])
-      )
-    ).data
-
-    // endpoint target
-    let targetEndpointData = endpointData
-    if (metadata.endpointName === endpointName) {
-      targetEndpointData = (
-        await axios.get(
-          uriHelpers.concatUrl([
-            envConstants.SECRET_URI,
-            'endpoint',
-            metadata.endpointName
-          ])
-        )
-      ).data
-    }
-    const targetParsed = uriHelpers.parse(targetEndpointData.target)
-
-    // placeholders
-    const fromT = t.data.spec
     const placeholder = {
       ...metadata,
-      fromRepoDomain: endpointData.domain,
-      fromRepoEndpointName: fromT.endpointName,
-      fromRepoApiUrl: endpointData.target,
-      fromRepoRepositoryName: parsed.pathList[1],
-      fromRepoOrganizationName: parsed.pathList[0],
-      fromRepoSchema: parsed.schema,
-      toRepoDomain: targetEndpointData.domain,
-      toRepoEndpointName: metadata.endpointName,
-      toRepoApiUrl: targetEndpointData.target,
-      toRepoRepositoryName: metadata.repositoryName,
-      toRepoOrganizationName: metadata.organizationName,
-      toRepoSchema: targetParsed.schema
+      ...endpointValues.reduce((acc, curr) => ({ ...acc, ...curr }), {})
     }
 
-    logger.debug(placeholder)
+    // pre-parsing
+    const values = yaml.load(Mustache.render(claimString, placeholder)).spec
+      .values
 
-    Mustache.escape = (text) => {
-      return text
+    const newValues = {
+      ...placeholder,
+      ...Object.fromEntries(
+        Object.entries(values).filter(([_, v]) => v != null)
+      )
     }
-    const claim = yaml.load(Mustache.render(claimString, placeholder))
 
-    claim.spec.values = placeholder
+    const claim = yaml.load(Mustache.render(claimString, newValues))
+
+    logger.debug(claim)
 
     const kc = new k8s.KubeConfig()
     kc.loadFromDefault()
     const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
     const doc = await k8sHelpers.create(client, claim)
-
-    console.log(doc)
 
     if (doc.statusCode && doc.statusCode !== 200) {
       return res.status(doc.statusCode).json({ message: doc.body.message })
