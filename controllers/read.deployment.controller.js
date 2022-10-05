@@ -9,7 +9,7 @@ router.get('/', async (req, res, next) => {
   try {
     const xxx = await k8sHelpers.getList(k8sConstants.deploymentApi)
     const list = xxx.filter((x) =>
-      x.metadata.name.endsWith('deployments.krateo.io')
+      x.metadata.name.endsWith('deployment.krateo.io')
     )
 
     const content = await Promise.all(

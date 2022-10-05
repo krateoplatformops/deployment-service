@@ -1,4 +1,4 @@
 module.exports = {
-  baseApi: '/apis/deployments.krateo.io',
+  baseApi: '/apis/deployment.krateo.io',
   version: 'v1alpha1'
 }

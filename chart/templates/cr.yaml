@@ -9,7 +9,7 @@ rules:
     resources: ["*"]
     verbs: ["*"]
   
-  - apiGroups: ["deployments.krateo.io"]
+  - apiGroups: ["deployment.krateo.io"]
     resources: ["*"]
     verbs: ["*"]
 
