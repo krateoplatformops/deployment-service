@@ -70,6 +70,33 @@ router.post('/', async (req, res, next) => {
       ...endpointValues.reduce((acc, curr) => ({ ...acc, ...curr }), {})
     }
 
+    // functions
+    placeholder.lower = () => {
+      return (text, render) => {
+        return render(text).toLowerCase()
+      }
+    }
+    placeholder.upper = () => {
+      return (text, render) => {
+        return render(text).toUpperCase()
+      }
+    }
+    placeholder.nospaces = () => {
+      return (text, render) => {
+        return render(text).replace(/\s/g, '')
+      }
+    }
+    placeholder.spacedash = () => {
+      return (text, render) => {
+        return render(text).replace(/\s/g, '-')
+      }
+    }
+    placeholder.norm = () => {
+      return (text, render) => {
+        return render(text).replace(/\s/g, '-').toLowerCase()
+      }
+    }
+
     // pre-parsing
     const values = yaml.load(Mustache.render(claimString, placeholder)).spec
       .values
@@ -98,6 +125,7 @@ router.post('/', async (req, res, next) => {
     }
 
     res.status(doc.statusCode || 200).json(responseHelpers.parse(doc))
+    // res.status(500).json({ message: 'dev' })
   } catch (error) {
     next(error)
   }
