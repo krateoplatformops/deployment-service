@@ -4,8 +4,6 @@ const k8sHelpers = require('../service-library/helpers/k8s.helpers')
 
 router.delete('/', async (req, res, next) => {
   try {
-    k8sHelpers.init()
-
     await k8sHelpers.deleteByName(
       `/apis/${req.body.apiVersion}/${req.body.kind.toLowerCase()}`,
       req.body.name.toLowerCase()

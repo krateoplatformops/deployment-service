@@ -14,8 +14,6 @@ const responseHelpers = require('../service-library/helpers/response.helpers')
 
 router.post('/', async (req, res, next) => {
   try {
-    k8sHelpers.init()
-
     const { templateId, metadata } = req.body
 
     const t = await axios.get(

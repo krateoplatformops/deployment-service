@@ -4,14 +4,9 @@ const k8sHelpers = require('../service-library/helpers/k8s.helpers')
 const { k8sConstants } = require('../service-library/constants')
 const responseHelpers = require('../service-library/helpers/response.helpers')
 const { deploymentConstants } = require('../constants')
-const logger = require('../service-library/helpers/logger.helpers')
 
 router.get('/', async (req, res, next) => {
   try {
-    k8sHelpers.init()
-
-    logger.debug(process.env.KUBERNETES_SERVICE_PORT)
-
     const xxx = await k8sHelpers.getList(k8sConstants.deploymentApi)
     const list = xxx.filter((x) =>
       x.metadata.name.endsWith('deployment.krateo.io')
@@ -35,8 +30,6 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:uid', async (req, res, next) => {
   try {
-    k8sHelpers.init()
-
     const xxx = await k8sHelpers.getList(k8sConstants.deploymentApi)
     const list = xxx.filter((x) =>
       x.metadata.name.endsWith('deployment.krateo.io')
@@ -63,8 +56,6 @@ router.get('/:uid', async (req, res, next) => {
 
 router.get('/:kind/:uid', async (req, res, next) => {
   try {
-    k8sHelpers.init()
-
     const exists = await k8sHelpers.getSingleByUid(
       `${deploymentConstants.baseApi}/${
         deploymentConstants.version
