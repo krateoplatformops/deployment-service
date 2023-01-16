@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const axios = require('axios')
 const Mustache = require('mustache')
+const yaml = require('js-yaml')
 const k8s = require('@kubernetes/client-node')
 
 const uriHelpers = require('../service-library/helpers/uri.helpers')
@@ -135,7 +136,7 @@ router.post('/', async (req, res, next) => {
     // }
     // logger.debug(newValues)
 
-    const claim = Mustache.render(claimString, placeholder)
+    const claim = yaml.load(Mustache.render(claimString, placeholder))
 
     logger.debug(claim)
 
