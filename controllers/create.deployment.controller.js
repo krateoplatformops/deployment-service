@@ -11,10 +11,12 @@ const logger = require('../service-library/helpers/logger.helpers')
 const { envConstants } = require('../service-library/constants')
 const k8sHelpers = require('../service-library/helpers/k8s.helpers')
 const responseHelpers = require('../service-library/helpers/response.helpers')
+const { deploymentConstants } = require('../constants')
+const secretHelpers = require('../service-library/helpers/secret.helpers')
 
 router.post('/', async (req, res, next) => {
   try {
-    const { templateId, metadata } = req.body
+    const { templateId, metadata, deploymentId } = req.body
 
     const t = await axios.get(
       uriHelpers.concatUrl([envConstants.TEMPLATE_URI, 'uid', templateId])
@@ -44,14 +46,30 @@ router.post('/', async (req, res, next) => {
     )
 
     const tUrl = t.data.spec.url
-    const parsed = uriHelpers.parse(tUrl)
+    const { pathList } = uriHelpers.parse(tUrl)
     const endpointName = t.data.spec.endpointName
+    const endpoint = await secretHelpers.getEndpoint(req.body.endpointName)
+
+    let org = null
+    let repo = null
+    switch (endpoint.metadata.type) {
+      case 'github':
+        org = pathList[0]
+        repo = pathList[1]
+        break
+      case 'bitbucket':
+        org = pathList[1]
+        repo = pathList[3]
+        break
+      default:
+        throw new Error(`Unsupported endpoint ${endpointName}`)
+    }
 
     const claimContent = await axios.get(
       uriHelpers.concatUrl([
         envConstants.GIT_URI,
         endpointName,
-        `[${parsed.pathList[0]}][${parsed.pathList[1]}]deployment.yaml`
+        `[${org}][${repo}]deployment.yaml`
       ])
     )
 
@@ -59,14 +77,13 @@ router.post('/', async (req, res, next) => {
       return text
     }
 
-    // console.log(endpointValues)
-
     const claimString = stringHelpers.b64toAscii(
       claimContent.data.list[0].content
     )
 
     const placeholder = {
       ...metadata,
+      ...t.data.spec.defaults,
       ...endpointValues.reduce((acc, curr) => ({ ...acc, ...curr }), {})
     }
 
@@ -116,8 +133,27 @@ router.post('/', async (req, res, next) => {
     kc.loadFromDefault()
     const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
-    const doc = await k8sHelpers.create(client, claim)
+    let doc = null
+    if (!deploymentId) {
+      doc = await k8sHelpers.create(client, claim)
+    } else {
+      console.log('update')
 
+      const oldClaim = await k8sHelpers.getSingleByUid(
+        `${deploymentConstants.baseApi}/${
+          deploymentConstants.version
+        }/${claim.kind.toLowerCase()}`,
+        deploymentId
+      )
+
+      doc = await k8sHelpers.patch(
+        `${deploymentConstants.baseApi}/${
+          deploymentConstants.version
+        }/${claim.kind.toLowerCase()}`,
+        oldClaim.metadata.name,
+        claim.spec
+      )
+    }
     if (doc.statusCode && doc.statusCode !== 200) {
       return res.status(doc.statusCode).json({ message: doc.body.message })
     } else if (doc instanceof Error) {
