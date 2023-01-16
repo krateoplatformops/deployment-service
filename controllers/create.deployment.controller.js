@@ -123,6 +123,8 @@ router.post('/', async (req, res, next) => {
     }
 
     logger.debug('Pre-parsing')
+    logger.debug(claimString)
+    logger.debug(placeholder)
     // pre-parsing
     const values = yaml.load(Mustache.render(claimString, placeholder)).spec
       .values
@@ -133,6 +135,8 @@ router.post('/', async (req, res, next) => {
         Object.entries(values).filter(([_, v]) => v != null)
       )
     }
+
+    logger.debug(newValues)
 
     const claim = yaml.load(Mustache.render(claimString, newValues))
 
