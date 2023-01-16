@@ -126,19 +126,17 @@ router.post('/', async (req, res, next) => {
     logger.debug(claimString)
     logger.debug(placeholder)
     // pre-parsing
-    const values = yaml.load(Mustache.render(claimString, placeholder)).spec
-      .values
+    // const values = yaml.load(Mustache.render(claimString, placeholder)).spec
+    //   .values
+    // const newValues = {
+    //   ...placeholder,
+    //   ...Object.fromEntries(
+    //     Object.entries(values).filter(([_, v]) => v != null)
+    //   )
+    // }
+    // logger.debug(newValues)
 
-    const newValues = {
-      ...placeholder,
-      ...Object.fromEntries(
-        Object.entries(values).filter(([_, v]) => v != null)
-      )
-    }
-
-    logger.debug(newValues)
-
-    const claim = yaml.load(Mustache.render(claimString, newValues))
+    const claim = yaml.load(Mustache.render(claimString, placeholder))
 
     logger.debug(claim)
 
