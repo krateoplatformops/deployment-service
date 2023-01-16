@@ -22,12 +22,16 @@ router.post('/', async (req, res, next) => {
       uriHelpers.concatUrl([envConstants.TEMPLATE_URI, 'uid', templateId])
     )
 
+    logger.debug(t.data.spec)
+
     // find fields with type = endpoint
     const endpoints = t.data.spec.widgets
       .map((w) =>
         w.properties.filter((f) => f.type?.toLowerCase() === 'endpoint')
       )
       .flat()
+
+    logger.debug(endpoints)
 
     const endpointValues = await Promise.all(
       endpoints.map(async (e) => {
@@ -49,6 +53,8 @@ router.post('/', async (req, res, next) => {
     const { pathList } = uriHelpers.parse(tUrl)
     const endpointName = t.data.spec.endpointName
     const endpoint = await secretHelpers.getEndpoint(req.body.endpointName)
+
+    logger.debug(endpoint)
 
     let org = null
     let repo = null
@@ -72,6 +78,8 @@ router.post('/', async (req, res, next) => {
         `[${org}][${repo}]deployment.yaml`
       ])
     )
+
+    logger.debug(claimContent)
 
     Mustache.escape = (text) => {
       return text
@@ -114,6 +122,7 @@ router.post('/', async (req, res, next) => {
       }
     }
 
+    logger.debug('Pre-parsing')
     // pre-parsing
     const values = yaml.load(Mustache.render(claimString, placeholder)).spec
       .values
