@@ -118,7 +118,10 @@ router.post('/', async (req, res, next) => {
     }
     placeholder.norm = () => {
       return (text, render) => {
-        return render(text).replace(/\s/g, '-').toLowerCase()
+        return render(text)
+          .replace(/\s/g, '-')
+          .toLowerCase()
+          .replace(/[^A-Za-z0-9-]/g, '')
       }
     }
 
