@@ -57,10 +57,10 @@ jobs:
       - name: Submodule
         run: git submodule update --recursive --remote --merge --force
       - name: Set tag
-        run: echo "::set-output name=VERSION_TAG::$(git describe --dirty --always --tags | sed 's/-/./2' | sed 's/-/./2' )"
+        uses: dawidd6/action-get-tag@v1
         id: tagger
       - name: Replace Version in Chart.yaml
-        run: sed -i 's/VERSION/${{ steps.tagger.outputs.VERSION_TAG }}/g' ./chart/Chart.yaml
+        run: sed -i 's/VERSION/${{ steps.tagger.outputs.tag }}/g' ./chart/Chart.yaml
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
@@ -77,4 +77,4 @@ jobs:
           method: 'POST'
           timeout: 5000
           headers: '{ "x-token": "${{ secrets.WEBHOOK_TOKEN }}" }'
-          body: '{ "project": "${{ github.event.repository.name }}", "tag": "${{ steps.tagger.outputs.VERSION_TAG }}" }'
+          body: '{ "project": "${{ github.event.repository.name }}", "tag": "${{ steps.tagger.outputs.tag }}" }'
