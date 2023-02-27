@@ -56,16 +56,16 @@ router.post('/', async (req, res, next) => {
 
     logger.debug(endpoint)
 
-    let org = null
-    let repo = null
+    let path = null
     switch (endpoint.metadata.type) {
       case 'github':
-        org = pathList[0]
-        repo = pathList[1]
+        path = [pathList[0], pathList[1]]
         break
       case 'bitbucket':
-        org = pathList[1]
-        repo = pathList[3]
+        path = [pathList[1], pathList[3]]
+        break
+      case 'azuredevops':
+        path = [pathList[0], pathList[1], pathList[3].split('?')[0]]
         break
       default:
         throw new Error(`Unsupported endpoint ${endpointName}`)
@@ -75,7 +75,7 @@ router.post('/', async (req, res, next) => {
       uriHelpers.concatUrl([
         envConstants.GIT_URI,
         endpointName,
-        `[${org}][${repo}]deployment.yaml`
+        `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
       ])
     )
 
