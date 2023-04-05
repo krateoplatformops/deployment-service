@@ -105,7 +105,7 @@ resources:
     cpu: "50m"
   limits:
     # you can monitor memory usage using "kubectl -n krateo top pods"
-    memory: "256Mi"
+    memory: "512Mi"
     cpu: "100m"
 
 autoscaling:
