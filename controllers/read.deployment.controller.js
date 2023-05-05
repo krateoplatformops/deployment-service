@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
     const content = await Promise.all(
       list.map(async (v) => {
         return await k8sHelpers.getList(
-          `${deploymentConstants.baseApi}/${v.spec.versions[0].name}/${v.spec.names.singular}`
+          `${deploymentConstants.baseApi}/${v.spec.versions[0].name}/${v.spec.names.plural}`
         )
       })
     )
@@ -38,7 +38,7 @@ router.get('/:uid', async (req, res, next) => {
     const content = await Promise.all(
       list.map(async (v) => {
         return await k8sHelpers.getList(
-          `${deploymentConstants.baseApi}/${v.spec.versions[0].name}/${v.spec.names.singular}`
+          `${deploymentConstants.baseApi}/${v.spec.versions[0].name}/${v.spec.names.plural}`
         )
       })
     )
