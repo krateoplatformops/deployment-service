@@ -22,7 +22,7 @@ router.post('/', async (req, res, next) => {
       uriHelpers.concatUrl([envConstants.TEMPLATE_URI, 'uid', templateId])
     )
 
-    logger.debug(t.data.spec)
+    logger.debug('t.data.spec=' + t.data.spec)
 
     // find fields with type = endpoint
     const endpoints = t.data.spec.widgets
@@ -31,7 +31,7 @@ router.post('/', async (req, res, next) => {
       )
       .flat()
 
-    logger.debug(endpoints)
+    logger.debug('endpoints= ' + endpoints)
 
     const endpointValues = await Promise.all(
       endpoints.map(async (e) => {
@@ -54,7 +54,7 @@ router.post('/', async (req, res, next) => {
     const endpointName = t.data.spec.endpointName
     const endpoint = await secretHelpers.getEndpoint(endpointName)
 
-    logger.debug('endpoint before switch=' + JSON.stringify(endpoint))
+    logger.debug('endpoint before switch=', endpoint)
 
     let path = null
     switch (endpoint.metadata.type) {
