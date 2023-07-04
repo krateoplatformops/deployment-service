@@ -58,6 +58,7 @@ router.post('/', async (req, res, next) => {
     logger.debug('endpointName=', endpointName)
     logger.debug('endpoint before switch (1)=', endpoint)
     logger.debug('endpoint before switch (2)=', JSON.stringify(endpoint))
+    logger.debug('endpoint.metadata.type=', endpoint.metadata.type)
 
     let path = null
     switch (endpoint.metadata.type) {
