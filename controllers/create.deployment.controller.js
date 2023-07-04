@@ -23,6 +23,7 @@ router.post('/', async (req, res, next) => {
     )
 
     logger.debug('t.data.spec=' + t.data.spec)
+    logger.debug('t.data.spec=' + JSON.stringify(t.data.spec))
 
     // find fields with type = endpoint
     const endpoints = t.data.spec.widgets
