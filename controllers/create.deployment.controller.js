@@ -55,13 +55,17 @@ router.post('/', async (req, res, next) => {
     const endpointName = t.data.spec.endpointName
     const endpoint = await secretHelpers.getEndpoint(endpointName)
 
-    logger.debug('endpointName=', endpointName)
-    logger.debug('endpoint before switch (1)=', endpoint)
-    logger.debug('endpoint before switch (2)=', JSON.stringify(endpoint))
-    logger.debug('endpoint.metadata.type (1)=', endpoint.metadata.type)
-    logger.debug('endpoint.metadata.type (2)=', JSON.stringify(endpoint.metadata.type))
+    logger.debug('<- endpointName =')
+    logger.debug(endpointName)
+    logger.debug('<- endpointName =')
+
+    logger.debug('<- endpoint', endpoint)
+    logger.debug(JSON.stringify(endpoint))
+    logger.debug('<- endpoint', endpoint)
+
+    logger.debug('<- endpoint.metadata.type')
     logger.debug(JSON.stringify(endpoint.metadata.type))
-    logger.debug('|- endpoint.metadata.type (2)')
+    logger.debug('<- endpoint.metadata.type')
 
     let path = null
     switch (endpoint.metadata.type) {
