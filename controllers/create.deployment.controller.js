@@ -52,12 +52,17 @@ router.post('/', async (req, res, next) => {
 
     const tUrl = t.data.spec.url
     const { pathList } = uriHelpers.parse(tUrl)
+
+    logger.debug('<- pathList')
+    logger.debug(JSON.stringify(pathList))
+    logger.debug('<- pathList')
+
     const endpointName = t.data.spec.endpointName
     const endpoint = await secretHelpers.getEndpoint(endpointName)
 
-    logger.debug('<- endpointName =')
-    logger.debug(endpointName)
-    logger.debug('<- endpointName =')
+    logger.debug('<- endpointName')
+    logger.debug(JSON.stringify(endpointName))
+    logger.debug('<- endpointName')
 
     logger.debug('<- endpoint', endpoint)
     logger.debug(JSON.stringify(endpoint))
