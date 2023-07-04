@@ -22,7 +22,11 @@ router.post('/', async (req, res, next) => {
       uriHelpers.concatUrl([envConstants.TEMPLATE_URI, 'uid', templateId])
     )
 
-    logger.debug('t.data.spec=' + t.data.spec)
+    logger.debug('<- t.data.spec')
+    logger.debug(JSON.stringify(t.data.spec))
+    logger.debug('<- t.data.spec')
+
+
     logger.debug('t.data.spec=' + JSON.stringify(t.data.spec))
 
     // find fields with type = endpoint
@@ -32,7 +36,9 @@ router.post('/', async (req, res, next) => {
       )
       .flat()
 
-    logger.debug('endpoints= ' + endpoints)
+    logger.debug('<- endpoints')
+    logger.debug(JSON.stringify(endpoints))
+    logger.debug('<- endpoints')
 
     const endpointValues = await Promise.all(
       endpoints.map(async (e) => {
@@ -87,6 +93,10 @@ router.post('/', async (req, res, next) => {
         throw new Error(`Unsupported endpoint ${endpointName}`)
     }
 
+    logger.debug('<- path')
+    logger.debug(JSON.stringify(path))
+    logger.debug('<- path')
+
     const claimContent = await axios.get(
       uriHelpers.concatUrl([
         envConstants.GIT_URI,
@@ -95,7 +105,9 @@ router.post('/', async (req, res, next) => {
       ])
     )
 
+    logger.debug('<- claimContent')
     logger.debug(claimContent)
+    logger.debug('<- claimContent')
 
     Mustache.escape = (text) => {
       return text
