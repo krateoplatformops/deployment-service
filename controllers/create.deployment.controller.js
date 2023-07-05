@@ -110,13 +110,13 @@ router.post('/', async (req, res, next) => {
         logger.debug(JSON.stringify(pathList[3]))
         logger.debug('<- pathList[3]')
 
-        logger.debug('<- pathList[3].split('?')[0]')
+        logger.debug('<- pathList[3].split 0')
         logger.debug(JSON.stringify(pathList[3].split('?')[0]))
-        logger.debug('<- pathList[3].split('?')[0]')
+        logger.debug('<- pathList[3].split 0')
 
-        logger.debug('<- pathList[3].split('?')[1]')
+        logger.debug('<- pathList[3].split 1')
         logger.debug(JSON.stringify(pathList[3].split('?')[1]))
-        logger.debug('<- pathList[3].split('?')[1]')
+        logger.debug('<- pathList[3].split 1')
 
         concatUrl = uriHelpers.concatUrl([
           envConstants.GIT_URI,
