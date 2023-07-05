@@ -79,16 +79,39 @@ router.post('/', async (req, res, next) => {
     logger.debug('<- endpoint.metadata.type')
 
     let path = null
+    let concatUrl = null
+
     switch (endpoint.metadata.type) {
       case 'github':
         path = [pathList[0], pathList[1]]
+
+        concatUrl = uriHelpers.concatUrl([
+          envConstants.GIT_URI,
+          endpointName,
+          `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
+        ])
+
         break
       case 'bitbucket':
         path = [pathList[1], pathList[3]]
+
+        concatUrl = uriHelpers.concatUrl([
+          envConstants.GIT_URI,
+          endpointName,
+          `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
+        ])
+
         break
       case 'azuredevops':
-//        path = [pathList[0], pathList[1], pathList[3].split('?')[0]]
-        path = [pathList[0], pathList[1], pathList[3].split('?')[0],pathList[3].split('?')[1]]
+        path = [pathList[0], pathList[1], pathList[3].split('?')[0]]
+        const queryparameter = pathList[3].split('?')[1]
+
+        concatUrl = uriHelpers.concatUrl([
+          envConstants.GIT_URI,
+          endpointName,
+          `${encodeURIComponent('[' + path.join('][') + ']')}` + queryparameter
+        ])
+
         break
       default:
         throw new Error(`Unsupported endpoint ${endpointName}`)
@@ -98,36 +121,17 @@ router.post('/', async (req, res, next) => {
     logger.debug(JSON.stringify(path))
     logger.debug('<- path')
 
+    logger.debug('<- concatUrl')
+    logger.debug(JSON.stringify(concatUrl))
+    logger.debug('<- concatUrl')
+
     let concatUrl = null
     const claimContent = await axios.get(
-
-      if (endpoint.metadata.type === "azuredevops") {
-
-        concatUrl = uriHelpers.concatUrl([
-          envConstants.GIT_URI,
-          endpointName,
-          '[' + path[0] + '][' + path[1] + '][' + path[2] + ']' + path[3]
-        ])
-
-        logger.debug('<- concatUrl for azuredevops')
-        logger.debug(JSON.stringify(concatUrl))
-        logger.debug('<- concatUrl for azuredevops')
-
-      } else {
-
-        uriHelpers.concatUrl([
-          envConstants.GIT_URI,
-          endpointName,
-          `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
-        ])
-      }
-
-
-      // uriHelpers.concatUrl([
-      //   envConstants.GIT_URI,
-      //   endpointName,
-      //   `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
-      // ])
+      uriHelpers.concatUrl([
+        envConstants.GIT_URI,
+        endpointName,
+        `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
+      ])
     )
 
     logger.debug('<- claimContent')
