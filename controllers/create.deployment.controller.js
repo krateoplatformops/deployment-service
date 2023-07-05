@@ -104,19 +104,16 @@ router.post('/', async (req, res, next) => {
         break
       case 'azuredevops':
         path = [pathList[0], pathList[1], pathList[3].split('?')[0]]
-        const queryparameter = pathList[3].split('?')[1]
+        const queryparameter = pathList[3].split('?')[1] + '/' + pathList[3]
 
-        logger.debug('<- pathList[3]')
-        logger.debug(JSON.stringify(pathList[3]))
-        logger.debug('<- pathList[3]')
+        logger.debug('<- path')
+        logger.debug(JSON.stringify(path))
+        logger.debug('<- path')
 
-        logger.debug('<- pathList[3].split 0')
-        logger.debug(JSON.stringify(pathList[3].split('?')[0]))
-        logger.debug('<- pathList[3].split 0')
+        logger.debug('<- queryparameter')
+        logger.debug(JSON.stringify(queryparameter))
+        logger.debug('<- queryparameter')
 
-        logger.debug('<- pathList[3].split 1')
-        logger.debug(JSON.stringify(pathList[3].split('?')[1]))
-        logger.debug('<- pathList[3].split 1')
 
         concatUrl = uriHelpers.concatUrl([
           envConstants.GIT_URI,
