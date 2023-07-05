@@ -141,10 +141,12 @@ router.post('/', async (req, res, next) => {
     //     `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
     //   ])
     // )
-    //
-    // logger.debug('<- claimContent')
-    // logger.debug(claimContent)
-    // logger.debug('<- claimContent')
+
+    const claimContent = await axios.get(concatUrl)
+
+    logger.debug('<- claimContent')
+    logger.debug(claimContent)
+    logger.debug('<- claimContent')
 
     Mustache.escape = (text) => {
       return text
