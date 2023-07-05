@@ -125,18 +125,17 @@ router.post('/', async (req, res, next) => {
     logger.debug(JSON.stringify(concatUrl))
     logger.debug('<- concatUrl')
 
-    let concatUrl = null
-    const claimContent = await axios.get(
-      uriHelpers.concatUrl([
-        envConstants.GIT_URI,
-        endpointName,
-        `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
-      ])
-    )
-
-    logger.debug('<- claimContent')
-    logger.debug(claimContent)
-    logger.debug('<- claimContent')
+    // const claimContent = await axios.get(
+    //   uriHelpers.concatUrl([
+    //     envConstants.GIT_URI,
+    //     endpointName,
+    //     `${encodeURIComponent('[' + path.join('][') + ']')}deployment.yaml`
+    //   ])
+    // )
+    //
+    // logger.debug('<- claimContent')
+    // logger.debug(claimContent)
+    // logger.debug('<- claimContent')
 
     Mustache.escape = (text) => {
       return text
