@@ -124,7 +124,8 @@ router.post('/', async (req, res, next) => {
         concatUrl = uriHelpers.concatUrl([
           envConstants.GIT_URI,
           endpointName,
-          `${encodeURIComponent('[' + path.join('][') + ']')}` + queryparameter
+          //`${encodeURIComponent('[' + path.join('][') + ']')}` + queryparameter
+          `${encodeURIComponent('[' + path.join('][') + ']' + queryparameter)}`
         ])
 
         break
