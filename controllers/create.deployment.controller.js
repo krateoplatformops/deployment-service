@@ -109,7 +109,7 @@ router.post('/', async (req, res, next) => {
         break
       case 'azuredevops':
         path = [pathList[0], pathList[1], pathList[3].split('?')[0]]
-        const queryparameter = /* pathList[3].split('?')[1] + '/' + */pathList[4]
+        //const queryparameter = /* pathList[3].split('?')[1] + '/' + */pathList[4]
         const queryparameter = tUrl.split('path=/')[1]
 
         logger.debug('<- path')
