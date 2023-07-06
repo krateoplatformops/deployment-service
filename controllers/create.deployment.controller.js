@@ -57,6 +57,11 @@ router.post('/', async (req, res, next) => {
     )
 
     const tUrl = t.data.spec.url
+
+    logger.debug('<- tUrl')
+    logger.debug(JSON.stringify(tUrl))
+    logger.debug('<- tUrl')
+
     const { pathList } = uriHelpers.parse(tUrl)
 
     logger.debug('<- pathList')
@@ -105,6 +110,7 @@ router.post('/', async (req, res, next) => {
       case 'azuredevops':
         path = [pathList[0], pathList[1], pathList[3].split('?')[0]]
         const queryparameter = /* pathList[3].split('?')[1] + '/' + */pathList[4]
+        const queryparameter = tUrl.split('path=/')[1]
 
         logger.debug('<- path')
         logger.debug(JSON.stringify(path))
