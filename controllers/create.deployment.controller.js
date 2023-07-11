@@ -150,7 +150,7 @@ router.post('/', async (req, res, next) => {
           envConstants.GIT_URI,
           endpointName,
           //`${encodeURIComponent('[' + path.join('][') + ']')}` + queryparameter
-          `${encodeURIComponent('[' + path.join('][') + ']')}`
+          `${encodeURIComponent('[' + path.join('][') + ']' + queryparameter)}`
         ])
 
         break
