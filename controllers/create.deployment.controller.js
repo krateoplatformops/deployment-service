@@ -131,7 +131,8 @@ router.post('/', async (req, res, next) => {
         break
       case 'gitlab':
 
-        path = tUrl.split('/')
+        const pathsplittemp = path.split('/')[1]
+        path = pathsplittemp.split('/')
 
         logger.debug('<- path')
         logger.debug(JSON.stringify(path))
