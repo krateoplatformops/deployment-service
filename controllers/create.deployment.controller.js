@@ -134,8 +134,7 @@ router.post('/', async (req, res, next) => {
         // const pathsplittemp = tUrl.split('/')[1]
         // path = pathsplittemp.split('/')
 
-        let [first, ...rest] = tUrl.split('/')
-        path = rest.join('][')
+        path.slice(1, -1)
 
         logger.debug('<- path')
         logger.debug(JSON.stringify(path))
