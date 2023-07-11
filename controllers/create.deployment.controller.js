@@ -85,6 +85,7 @@ router.post('/', async (req, res, next) => {
 
     let path = null
     let concatUrl = null
+    let queryparameter = null
 
     switch (endpoint.metadata.type) {
       case 'github':
@@ -110,7 +111,7 @@ router.post('/', async (req, res, next) => {
       case 'azuredevops':
         path = [pathList[0], pathList[1], pathList[3].split('?')[0]]
         //const queryparameter = /* pathList[3].split('?')[1] + '/' + */pathList[4]
-        const queryparameter = tUrl.split('path=/')[1]
+        queryparameter = tUrl.split('path=/')[1]
 
         logger.debug('<- path')
         logger.debug(JSON.stringify(path))
@@ -135,7 +136,7 @@ router.post('/', async (req, res, next) => {
         // path = pathsplittemp.split('/')
 
         path = pathList.slice(0, -1)
-        const queryparameter = pathList[pathList.length-1]
+        queryparameter = pathList[pathList.length-1]
 
         logger.debug('<- path')
         logger.debug(JSON.stringify(path))
