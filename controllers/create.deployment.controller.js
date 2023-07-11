@@ -134,11 +134,16 @@ router.post('/', async (req, res, next) => {
         // const pathsplittemp = tUrl.split('/')[1]
         // path = pathsplittemp.split('/')
 
-        path.slice(1, -1)
+        path = pathList.slice(0, -1)
+        const queryparameter = pathList[pathList.length-1]
 
         logger.debug('<- path')
         logger.debug(JSON.stringify(path))
         logger.debug('<- path')
+
+        logger.debug('<- queryparameter')
+        logger.debug(JSON.stringify(queryparameter))
+        logger.debug('<- queryparameter')
 
         concatUrl = uriHelpers.concatUrl([
           envConstants.GIT_URI,
