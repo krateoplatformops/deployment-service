@@ -129,6 +129,22 @@ router.post('/', async (req, res, next) => {
         ])
 
         break
+      case 'gitlab':
+
+        path = tUrl.split('/')
+
+        logger.debug('<- path')
+        logger.debug(JSON.stringify(path))
+        logger.debug('<- path')
+
+        concatUrl = uriHelpers.concatUrl([
+          envConstants.GIT_URI,
+          endpointName,
+          //`${encodeURIComponent('[' + path.join('][') + ']')}` + queryparameter
+          `${encodeURIComponent('[' + path.join('][') + ']')}`
+        ])
+
+        break
       default:
         throw new Error(`Unsupported endpoint ${endpointName}`)
     }
