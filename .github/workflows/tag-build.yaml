@@ -55,16 +55,35 @@ jobs:
     name: Create helm chart
     needs: build
     runs-on: ubuntu-latest
+
     steps:
+      - name: Extract latest App Version
+        uses: tdemin/find-latest-tag@v1
+        id: app_version
+        with:
+          repo: https://${{ secrets.HELM_CHARTS_BOT }}@github.com/krateoplatformops/deployment-service.git
+
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Submodule
-        run: git submodule update --recursive --remote --merge --force
-      - name: Set tag
-        uses: dawidd6/action-get-tag@v1
+
+      - name: Extract Version
         id: tagger
+        uses: battila7/get-version-action@v2
+
+      - name: Print Version
+        run: |
+          echo ${{steps.tagger.outputs.version}}
+          echo ${{steps.tagger.outputs.version-without-v}}
+
       - name: Replace Version in Chart.yaml
-        run: sed -i 's/VERSION/${{ steps.tagger.outputs.tag }}/g' ./chart/Chart.yaml
+        run: sed -i 's/CHART_VERSION/${{ steps.tagger.outputs.version-without-v }}/g' ./chart/Chart.yaml
+
+      - name: Print latest App Version
+        run: echo ${{ steps.app_version.outputs.tag }}
+
+      - name: Replace App Version in Chart.yaml
+        run: sed -i 's/APP_VERSION/${{ steps.app_version.outputs.tag }}/g' ./chart/Chart.yaml
+
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
@@ -74,11 +93,3 @@ jobs:
           owner: krateoplatformops
           repository: helm-charts
           branch: gh-pages
-      - name: Webhook
-        uses: indiesdev/curl@v1.1
-        with:
-          url: ${{ secrets.WEBHOOK_URL }}
-          method: 'POST'
-          timeout: 5000
-          headers: '{ "x-token": "${{ secrets.WEBHOOK_TOKEN }}" }'
-          body: '{ "project": "${{ github.event.repository.name }}", "tag": "${{ steps.tagger.outputs.tag }}" }'
