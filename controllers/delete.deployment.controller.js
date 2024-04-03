@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const k8sHelpers = require('../service-library/helpers/k8s.helpers')
+const logger = require('../service-library/helpers/logger.helpers')
 
 router.delete('/', async (req, res, next) => {
   try {
